@@ -199,3 +199,15 @@ class HabitatSimVelocityCtrlActionSpaceConfiguration(ActionSpaceConfiguration):
                 "velocity_control"
             ),
         }
+
+
+@registry.register_action_space_configuration(name="velocitycontrolcompat")
+class HabitatSimVelocityCtrCompatActionSpaceConfiguration(
+    ActionSpaceConfiguration
+):
+    def get(self):
+        return {
+            HabitatSimActions.velocity_control_compat: habitat_sim.ActionSpec(
+                "velocity_control_compat"
+            ),
+        }

@@ -161,8 +161,14 @@ class BaseTrainer:
                             prev_ckpt_ind,
                         )
                         time.sleep(2)  # sleep for 2 secs before polling again
-                    logger.info(f"=======current_ckpt: {current_ckpt}=======")  # type: ignore
+
                     prev_ckpt_ind += 1
+
+                    # evaluate every 3 ckpts
+                    if prev_ckpt_ind % 3 != 0:
+                        continue
+
+                    logger.info(f"=======current_ckpt: {current_ckpt}=======")  # type: ignore
                     self._eval_checkpoint(
                         checkpoint_path=current_ckpt,
                         writer=writer,

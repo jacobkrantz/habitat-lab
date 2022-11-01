@@ -149,6 +149,13 @@ _C.habitat.task.actions.velocity_control.min_abs_lin_speed = (
 )
 _C.habitat.task.actions.velocity_control.min_abs_ang_speed = 1.0  # deg per sec
 _C.habitat.task.actions.velocity_control.time_step = 1.0  # seconds
+_C.habitat.task.actions.velocity_control_compat = CN()
+_C.habitat.task.actions.velocity_control_compat.type = "VelocityActionCompat"
+_C.habitat.task.actions.velocity_control_compat.lin_vel_range = [0.0, 0.3]
+_C.habitat.task.actions.velocity_control_compat.ang_vel_range = [-10.0, 10.0]
+_C.habitat.task.actions.velocity_control_compat.min_abs_lin_speed = 0.03
+_C.habitat.task.actions.velocity_control_compat.min_abs_ang_speed = 1.0
+_C.habitat.task.actions.velocity_control_compat.time_step = 1.0
 # -----------------------------------------------------------------------------
 # # REARRANGE actions
 # -----------------------------------------------------------------------------

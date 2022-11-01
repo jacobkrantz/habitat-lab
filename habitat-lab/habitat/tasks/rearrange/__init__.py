@@ -49,3 +49,5 @@ def _try_register_rearrange_task():
         HabitatSimActions.extend_action_space("empty")
     if not HabitatSimActions.has_action("rearrange_stop"):
         HabitatSimActions.extend_action_space("rearrange_stop")
+    if not HabitatSimActions.has_action("velocity_control_compat"):
+        HabitatSimActions.extend_action_space("velocity_control_compat")

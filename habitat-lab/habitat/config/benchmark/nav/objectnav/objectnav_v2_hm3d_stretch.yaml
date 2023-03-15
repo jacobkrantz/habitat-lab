@@ -5,6 +5,7 @@ defaults:
   - /habitat/task: objectnav_v2
   - /habitat/simulator/agents@habitat.simulator.agents.main_agent: rgbd_agent
   - /habitat/dataset/objectnav: hm3d_v2
+  - override /habitat/task/actions: discrete_waypoint_controller
   - _self_
 
 habitat:

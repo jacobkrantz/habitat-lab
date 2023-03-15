@@ -5,6 +5,7 @@ defaults:
   - /habitat/task: instance_imagenav_v3
   - /habitat/simulator/agents@habitat.simulator.agents.main_agent: rgbd_agent
   - /habitat/dataset/instance_imagenav: hm3d_v3
+  - override /habitat/task/actions: discrete_waypoint_controller
   - _self_
 
 habitat:

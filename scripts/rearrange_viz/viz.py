@@ -104,6 +104,7 @@ def main():
         scene = Scene(rooms, scene_data["instruction"])
         fig, ax = scene.plot(propositions)
         width_inches = 20
+        print(scene.width, scene.height)
         fig.set_size_inches(width_inches, (scene.height/scene.width) * width_inches)
         if args.save_path:
             plt.savefig(args.save_path, dpi=400)

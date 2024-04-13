@@ -13,7 +13,6 @@ class Scene:
 
         # Split instruction string into words and exclude "room"
         keywords = [word.lower().strip(".") for word in instruction.split()]
-        print(keywords)
 
         # Create a dictionary to hold the rooms and their relevance score
         relevance_scores = {}
@@ -138,9 +137,6 @@ class Scene:
                         found_receptacle.plot_placeholder = True
                         found_receptacle.init_size()
                         room.init_size()
-        
-        first_row_width = 0
-        second_row_width = 0
         for room in self.rooms:
             if room.room_id in mentioned_rooms:
                 for receptacle in room.receptacles:
@@ -154,16 +150,13 @@ class Scene:
                 room.init_size()
 
         # Calculate total scene width based on the widths of all rooms
-        first_row_width = sum(room.width for room in self.rooms if room.room_id in mentioned_rooms)
-        second_row_width = sum(room.width for room in self.rooms if room.room_id not in mentioned_rooms)
-        self.width = max(first_row_width, second_row_width)
+        self.width = sum(room.width for room in self.rooms if room.room_id in mentioned_rooms)
 
         # Calculate scene height
-        self.height = max(room.height for room in self.rooms)
+        first_row_height = max(room.height for room in self.rooms)
 
         # Calculate starting position of the first row to center it relative to the second row
-        first_row_position = (self.width - first_row_width) / 2
-        second_row_position = 0
+        first_row_position = 0
 
         # Create a figure and axis for plotting the scene
         fig, ax = plt.subplots()
@@ -177,9 +170,20 @@ class Scene:
             if room.room_id in mentioned_rooms:
                 ax = room.plot(position=(first_row_position, 0), ax=ax)
                 first_row_position += room.width
-            else:
-                ax = room.plot(position=(second_row_position, -self.height), ax=ax)
-                second_row_position += room.width
+                
+        current_row_width = 0
+        current_row_height = -first_row_height
+        for room in self.rooms:
+            if room.room_id not in mentioned_rooms:
+                if room.width + current_row_width > self.width:
+                    current_row_height -= first_row_height
+                    current_row_width = 0
+                ax = room.plot(position=(current_row_width, current_row_height), ax=ax)
+                current_row_width += room.width
+
+        self.height_upper = first_row_height
+        self.height_lower = current_row_height
+        self.height = self.height_upper - self.height_lower
 
         # Plot lines between objects and receptacles based on propositions
         if propositions:
@@ -198,5 +202,5 @@ class Scene:
 
         # Set axis limits
         ax.set_xlim(0, self.width)
-        ax.set_ylim(-self.height, self.height)
+        ax.set_ylim(self.height_lower, self.height_upper)
         return fig, ax

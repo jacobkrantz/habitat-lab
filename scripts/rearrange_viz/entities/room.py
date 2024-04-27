@@ -69,13 +69,23 @@ class Room:
 
         new_position = [position[0] + self.config.horizontal_margin, position[1] + self.config.vertical_margin]
 
+        # Calculate initial offset considering left margin and horizontal padding
+        offset = new_position[0] + self.config.left_pad
+        for receptacle in self.receptacles:
+            ax = receptacle.plot(ax, position=(offset, new_position[1] + self.config.bottom_pad))
+            print(receptacle.width)
+            offset += receptacle.width
+
+        
         # Calculate total room width including margins
         total_receptacle_width = max(
             self.config.min_width, 
             sum(receptacle.width for receptacle in self.receptacles)
         )
+        # Need to calculate room width AFTER plotting
         room_width = total_receptacle_width + self.config.left_pad + self.config.right_pad
-
+        self.width = room_width + 2 * self.config.horizontal_margin 
+        
         # Calculate text annotation position
         text_x = new_position[0] + room_width / 2
         text_y = new_position[1] + self.config.bottom_pad / 4   # Offset for lower v_pad region
@@ -85,12 +95,6 @@ class Room:
 
         ax.annotate(wrapped_text, xy=(text_x, text_y), xytext=(text_x, text_y),
                     ha='center', va='bottom', fontsize=self.config.text_size)
-
-        # Calculate initial offset considering left margin and horizontal padding
-        offset = new_position[0] + self.config.left_pad
-        for receptacle in self.receptacles:
-            ax = receptacle.plot(ax, position=(offset, new_position[1] + self.config.bottom_pad))
-            offset += receptacle.width
 
         total_room_height = self.config.full_height + self.config.bottom_pad + self.config.top_pad   
         if self.objects:

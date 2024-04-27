@@ -98,55 +98,15 @@ class Scene:
                         length_includes_head=True, edgecolor='white', facecolor='white', overhang=self.config.arrow.overhang)
         ax.add_patch(arrow)
 
-    def plot(self, propositions=None):
-        # Extract room names mentioned in propositions
-        mentioned_items = []
-        mentioned_rooms = []
-        if propositions:
-            for prop in propositions:
-                if prop["function_name"] != "is_in_room":
-                    mentioned_items += prop['args']['object_names']
-                    mentioned_items += prop['args']['receptacle_names']
-                else:
-                    mentioned_items += prop['args']['object_names']
-                    mentioned_rooms += prop['args']['room_names']
-
-        for room in self.rooms:
-            if room.room_id in mentioned_rooms:
-                room.plot_placeholder = True
-
-        for room in self.rooms:
-            for item in mentioned_items:
-                found_receptacle = room.find_receptacle_by_id(item)
-                found_object = room.find_object_by_id(item)
-                if found_receptacle or found_object:
-                    if room.room_id not in mentioned_rooms:
-                        mentioned_rooms += [room.room_id]
-                if found_receptacle:
-                    found_receptacle.plot_placeholder = True
-
-        for room in self.rooms:
-            if room.room_id in mentioned_rooms:
-                room.in_proposition=True
-                room.init_size()
-
+    def plot_rooms_linear(self, mentioned_rooms, ax):
+        # Plot rooms linearly with names underneath
         # Calculate total scene width based on the widths of all rooms
         self.width = sum(room.width for room in self.rooms if room.room_id in mentioned_rooms)
-
         # Calculate scene height
-        first_row_height = max(room.height for room in self.rooms)
+        first_row_height = max(room.height for room in self.rooms if room.room_id in mentioned_rooms)
 
         # Calculate starting position of the first row to center it relative to the second row
         first_row_position = 0
-
-        # Create a figure and axis for plotting the scene
-        fig, ax = plt.subplots()
-        
-        background_color = "#3E4C60"
-        # Set the background color of the figure
-        fig.patch.set_facecolor(background_color)
-
-        # Plot rooms linearly with names underneath
         for room in self.rooms:
             if room.room_id in mentioned_rooms:
                 ax = room.plot(position=(first_row_position, 0), ax=ax)
@@ -186,6 +146,49 @@ class Scene:
         self.height_lower = current_row_height
         self.height = self.height_upper - self.height_lower
 
+        return ax
+
+    def plot(self, propositions=None):
+        # Extract room names mentioned in propositions
+        mentioned_items = []
+        mentioned_rooms = []
+        if propositions:
+            for prop in propositions:
+                if prop["function_name"] != "is_in_room":
+                    mentioned_items += prop['args']['object_names']
+                    mentioned_items += prop['args']['receptacle_names']
+                else:
+                    mentioned_items += prop['args']['object_names']
+                    mentioned_rooms += prop['args']['room_names']
+
+        for room in self.rooms:
+            if room.room_id in mentioned_rooms:
+                room.plot_placeholder = True
+
+        for room in self.rooms:
+            for item in mentioned_items:
+                found_receptacle = room.find_receptacle_by_id(item)
+                found_object = room.find_object_by_id(item)
+                if found_receptacle or found_object:
+                    if room.room_id not in mentioned_rooms:
+                        mentioned_rooms += [room.room_id]
+                if found_receptacle:
+                    found_receptacle.plot_placeholder = True
+
+        for room in self.rooms:
+            if room.room_id in mentioned_rooms:
+                room.in_proposition=True
+                room.init_size()
+
+        # Create a figure and axis for plotting the scene
+        fig, ax = plt.subplots()
+        
+        background_color = "#3E4C60"
+        # Set the background color of the figure
+        fig.patch.set_facecolor(background_color)
+
+        ax = self.plot_rooms_linear(mentioned_rooms, ax)
+
         # Plot lines between objects and receptacles based on propositions
         if propositions:
             for proposition in propositions:
@@ -198,8 +201,6 @@ class Scene:
                 else:
                     room_names = args['room_names']
                     self.plot_object_to_room_lines(object_names, room_names, ax)
-
-
 
         # Set axis limits
         ax.set_xlim(0, self.width)

@@ -2,7 +2,7 @@ defaults:
   - object: default
 
 object:
-  text_margin: 100
+  text_margin: 30
   width: 50
   height: 50
   text_size: 14
@@ -30,10 +30,10 @@ room:
   left_pad: 50
   right_pad: 50
   full_height: 500
-  half_height: 300
+  half_height: 200
   objects_height: 400
   min_width: 100
-  object_block_horizontal_margin: 300
+  object_block_horizontal_margin: 0.2 # Percentage on each side to skip
   text_size: 14
 
 scene:
@@ -42,3 +42,4 @@ scene:
     head_width: 50
     linewidth: 2
     overhang: 0.9
+  targetwidth:

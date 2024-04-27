@@ -64,13 +64,13 @@ class Receptacle:
         if self.plot_placeholder:
             properties = receptacle_properties['_'.join(self.receptacle_id.split('_')[:-1])]
             if properties["is_on_top"]:
-                self.top_placeholder_position = (position[0] + self.width / 2, position[1] + self.height + self.config.placeholder_margin)  # Update top position
+                self.top_placeholder_position = (position[0] + self.width / 2 + self.horizontal_margin, position[1] + self.height + self.config.placeholder_margin)  # Update top position
                 self.top_placeholder = Placeholder(self.config)
                 top_placeholder_origin = (self.top_placeholder_position[0] - self.config.placeholder.width/2, self.top_placeholder_position[1] - self.config.placeholder.height/2 )
                 ax = self.top_placeholder.plot(ax, top_placeholder_origin)
                 
             if properties["is_inside"]:
-                self.center_placeholder_position = (position[0] + self.width / 2, position[1] + self.height / 2)  # Update center position
+                self.center_placeholder_position = (position[0] + self.width / 2  + self.horizontal_margin, position[1] + self.height / 2)  # Update center position
                 self.center_placeholder = Placeholder(self.config)
                 center_placeholder_origin = (self.center_placeholder_position[0] - self.config.placeholder.width/2, self.center_placeholder_position[1] - self.config.placeholder.height/2 )
                 ax = self.center_placeholder.plot(ax, center_placeholder_origin)

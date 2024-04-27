@@ -1,40 +1,41 @@
 import os
 import matplotlib.pyplot as plt
-from PIL import Image, ImageOps, ImageChops
+from PIL import Image
 import textwrap
 from .constants import receptacle_properties, receptacle_color_map
-from matplotlib.patches import FancyBboxPatch
+from .placeholder import Placeholder
+from .utils import add_tint_to_rgb
 
 class Receptacle:
-    def __init__(self, receptacle_id, icon_path, scale=1.0):
+    def __init__(self, config, receptacle_id, icon_path):
+        self.config = config.receptacle
         self.receptacle_id = receptacle_id
         self.icon_path = icon_path
-        self.margin = 20
         self.center_placeholder_position = None  # Initialize center position
         self.top_placeholder_position = None  # Initialize top position
-        self.placeholder_size = 40
         self.plot_placeholder = False
         self.init_size()
 
-    def add_tint_to_rgb(self, image, tint_color):
-        # Extract the alpha channel from the original image
-        r, g, b, alpha = image.split()
+    @property
+    def horizontal_margin(self):
+        return self.config.horizontal_margin
 
-        # Create a solid color image of the same size as the original image
-        tint = Image.new('RGB', image.size, tint_color)
+    def resize_icon(self, icon):
+        width, height = icon.size
+        scaling_factor = self.config.target_height / height
 
-        # Composite the RGB channels with the tint color
-        tinted_rgb = ImageChops.screen(tint.convert('RGB'), image.convert('RGB'))
-
-        # Return the composite image with original alpha channel
-        return Image.merge('RGBA', (tinted_rgb.split()[0], tinted_rgb.split()[1], tinted_rgb.split()[2], alpha))
-
+        # Resize the image
+        new_width = int(width * scaling_factor)
+        new_height = int(height * scaling_factor)
+        resized_icon = icon.resize((new_width, new_height))
+        return resized_icon
 
     def init_size(self):
         icon = Image.open(self.icon_path)
+        icon = self.resize_icon(icon)
         icon_width, icon_height = icon.size
-        self.width = (icon_width + 2 * self.margin)
-        self.height = (icon_height + 20)
+        self.width = (icon_width + 2 * self.horizontal_margin)
+        self.height = icon_height
 
     def plot(self, ax=None, position=(0, 0)):
         if ax is None:
@@ -44,16 +45,17 @@ class Receptacle:
             created_fig = False
 
         icon = Image.open(self.icon_path)
+        icon = self.resize_icon(icon)
         color = receptacle_color_map['_'.join(self.receptacle_id.split('_')[:-1])]
         color = tuple(int(255 * i) for i in color)
-        icon = self.add_tint_to_rgb(icon, tint_color=color)
+        icon = add_tint_to_rgb(icon, tint_color=color)
         receptacle_width, receptacle_height = icon.size
         ax.imshow(icon, 
             extent=(
-                (position[0] + self.margin),
-                (position[0] + receptacle_width + self.margin), 
+                (position[0] + self.horizontal_margin),
+                (position[0] + receptacle_width + self.horizontal_margin), 
                 position[1], 
-                (position[1] + receptacle_height + 20)
+                (position[1] + receptacle_height)
             )
         )
 
@@ -62,36 +64,17 @@ class Receptacle:
         if self.plot_placeholder:
             properties = receptacle_properties['_'.join(self.receptacle_id.split('_')[:-1])]
             if properties["is_on_top"]:
-                self.top_placeholder_position = (position[0] + self.width / 2, position[1] + self.height + 25)  # Update top position
-                object_rect = FancyBboxPatch(
-                    (self.top_placeholder_position[0] - self.placeholder_size/2, self.top_placeholder_position[1] - self.placeholder_size/2),
-                    self.placeholder_size, 
-                    self.placeholder_size, 
-                    edgecolor='white', 
-                    facecolor='black', 
-                    linewidth=0, 
-                    linestyle='-', 
-                    boxstyle='Round, pad=0, rounding_size=4', 
-                    alpha=1.0, 
-                )
-
-                ax.add_patch(object_rect)
+                self.top_placeholder_position = (position[0] + self.width / 2, position[1] + self.height + self.config.placeholder_margin)  # Update top position
+                self.top_placeholder = Placeholder(self.config)
+                top_placeholder_origin = (self.top_placeholder_position[0] - self.config.placeholder.width/2, self.top_placeholder_position[1] - self.config.placeholder.height/2 )
+                ax = self.top_placeholder.plot(ax, top_placeholder_origin)
                 
             if properties["is_inside"]:
                 self.center_placeholder_position = (position[0] + self.width / 2, position[1] + self.height / 2)  # Update center position
-                object_rect = FancyBboxPatch(
-                    (self.center_placeholder_position[0] - self.placeholder_size/2, self.center_placeholder_position[1] - self.placeholder_size/2),
-                    self.placeholder_size, 
-                    self.placeholder_size, 
-                    edgecolor='white', 
-                    facecolor='black', 
-                    linewidth=0, 
-                    linestyle='-', 
-                    boxstyle='Round, pad=0, rounding_size=4', 
-                    alpha=1.0, 
-                )
+                self.center_placeholder = Placeholder(self.config)
+                center_placeholder_origin = (self.center_placeholder_position[0] - self.config.placeholder.width/2, self.center_placeholder_position[1] - self.config.placeholder.height/2 )
+                ax = self.center_placeholder.plot(ax, center_placeholder_origin)
 
-                ax.add_patch(object_rect)
         # # Wrap the text if it's longer than a certain length
         # wrapped_text = textwrap.fill(self.receptacle_id, width=10)
 

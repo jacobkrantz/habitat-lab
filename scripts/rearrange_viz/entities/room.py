@@ -1,32 +1,33 @@
 import matplotlib.pyplot as plt
 import os
 import textwrap
+from .placeholder import Placeholder
 
 class Room:
-    def __init__(self, room_id, receptacles, objects=None, scale=1.0):
+    def __init__(self, config, room_id, receptacles, objects=None, in_proposition=False):
+        self.config = config.room
         self.room_id = room_id
         self.receptacles = receptacles
         self.objects = objects
+        self.plot_placeholder = False
 
-        self.alpha = 1
-        self.margin = 10
-        self.v_pad = 150
-        self.h_pad = 200
-        self.scale = scale
-        self.room_height = 700
-        
-        self.min_width = 100
-        self.object_height = 500
-        self.width = None
-        self.height = None
-        self.object_block_offset = 300
+        self.in_proposition = in_proposition
+        if self.objects:
+            self.room_height = self.config.full_height
+        else:
+            if in_proposition:
+                self.room_height = self.config.full_height
+            else:
+                self.room_height = self.config.half_height
+
         self.init_size()
         
     def init_size(self):
-        total_receptacle_width = max(self.min_width, sum(receptacle.width for receptacle in self.receptacles))
+        total_receptacle_width = max(self.config.min_width, sum(receptacle.width for receptacle in self.receptacles))
         room_width = total_receptacle_width
-        self.width = (room_width + 2 * self.margin + 2 * self.h_pad) 
-        self.height = self.room_height + 2 * self.v_pad
+        self.width = (room_width + 2 * self.config.horizontal_margin + self.config.left_pad + self.config.right_pad) 
+        total_room_height = self.room_height + self.config.bottom_pad + self.config.top_pad
+        self.height = total_room_height + 2 * self.config.vertical_margin
         
     def find_object_by_id(self, object_id):
         """
@@ -66,43 +67,59 @@ class Room:
         else:
             created_fig = False
 
-        # Calculate total room width including margins
-        total_receptacle_width = max(self.min_width, sum(receptacle.width for receptacle in self.receptacles))
-        room_width = total_receptacle_width + 2 * self.h_pad
+        new_position = [position[0] + self.config.horizontal_margin, position[1] + self.config.vertical_margin]
 
-        self.center_position = (position[0] + self.margin + room_width / 2, position[1] + self.room_height / 2) 
+        # Calculate total room width including margins
+        total_receptacle_width = max(
+            self.config.min_width, 
+            sum(receptacle.width for receptacle in self.receptacles)
+        )
+        room_width = total_receptacle_width + self.config.left_pad + self.config.right_pad
 
         # Calculate text annotation position
-        text_x = position[0] + self.margin + room_width / 2
-        text_y = position[1] + self.v_pad / 4   # Offset for lower v_pad region
+        text_x = new_position[0] + room_width / 2
+        text_y = new_position[1] + self.config.bottom_pad / 4   # Offset for lower v_pad region
         
         # Wrap the text if it's longer than a certain length
         wrapped_text = textwrap.fill(self.room_id, width=15)
 
         ax.annotate(wrapped_text, xy=(text_x, text_y), xytext=(text_x, text_y),
-                    ha='center', va='bottom', fontsize=int(os.environ['room_text_size']))
+                    ha='center', va='bottom', fontsize=self.config.text_size)
 
         # Calculate initial offset considering left margin and horizontal padding
-        offset = position[0] + self.margin + self.h_pad
+        offset = new_position[0] + self.config.left_pad
         for receptacle in self.receptacles:
-            ax = receptacle.plot(ax, position=(offset, position[1] + self.v_pad))
+            ax = receptacle.plot(ax, position=(offset, new_position[1] + self.config.bottom_pad))
             offset += receptacle.width
 
+        total_room_height = self.config.full_height + self.config.bottom_pad + self.config.top_pad   
         if self.objects:
             # Calculate initial offset for objects considering left margin, horizontal padding, and spacing objects evenly
             total_object_width = sum(obj.width for obj in self.objects)
-            spacing = (room_width - total_object_width - self.object_block_offset * 2) / (len(self.objects) + 1)
-            offset = position[0] + self.margin + spacing + self.object_block_offset
+            spacing = (room_width - total_object_width - self.config.object_block_horizontal_margin * 2) / (len(self.objects) + 1)
+            offset = new_position[0] + spacing + self.config.object_block_horizontal_margin
             for obj in self.objects:
-                ax = obj.plot(ax, position=(offset, position[1] + self.object_height))  # Offset for objects above receptacles
+                ax = obj.plot(ax, position=(offset, new_position[1] + self.config.objects_height))  # Offset for objects above receptacles
                 offset += obj.width + spacing  # Increment offset for next object and spacing
+                
+        else:
+            if not self.in_proposition:
+                total_room_height = self.config.half_height + self.config.bottom_pad + self.config.top_pad
+            self.height = total_room_height + 2 * self.config.vertical_margin
         
-        rect = ax.add_patch(plt.Rectangle((position[0] + self.margin, position[1]), room_width , self.room_height , color='#5A6F8E', alpha=self.alpha))
+        self.center_position = (new_position[0] + room_width / 2, new_position[1] + self.height / 2) 
+
+        rect = ax.add_patch(plt.Rectangle((new_position[0], new_position[1]), room_width , total_room_height , color='#5A6F8E', alpha=self.config.box_alpha))
         # Set the z-order of the rectangle
         rect.set_zorder(-1)
+        
+        if self.plot_placeholder:
+            self.center_placeholder = Placeholder(self.config)
+            center_placeholder_origin = (self.center_position[0] - self.config.placeholder.width/2, self.center_position[1] - self.config.placeholder.height/2 )
+            ax = self.center_placeholder.plot(ax, center_placeholder_origin)
 
-        ax.set_xlim(position[0], position[0] + (2 * self.margin + room_width))
-        ax.set_ylim(position[1], position[1] + self.room_height + 2 * self.v_pad)
+        ax.set_xlim(position[0], position[0] + (2 * self.config.horizontal_margin + room_width))
+        ax.set_ylim(position[1], position[1] + self.height)
         ax.axis('off')
 
         if created_fig:

@@ -1,0 +1,44 @@
+defaults:
+  - object: default
+
+object:
+  text_margin: 100
+  width: 50
+  height: 50
+  text_size: 14
+  rounding_size: 10
+
+receptacle:
+  horizontal_margin: 5
+  target_height: 80
+  placeholder:
+    width: 50
+    height: 50
+    rounding_size: 10
+  placeholder_margin: 40
+
+room:
+  placeholder:
+    width: 50
+    height: 50
+    rounding_size: 10
+  box_alpha: 1.0
+  horizontal_margin: 10
+  vertical_margin: 10
+  top_pad: 10
+  bottom_pad: 100
+  left_pad: 50
+  right_pad: 50
+  full_height: 500
+  half_height: 300
+  objects_height: 400
+  min_width: 100
+  object_block_horizontal_margin: 300
+  text_size: 14
+
+scene:
+  arrow:
+    head_length: 25
+    head_width: 50
+    linewidth: 2
+    overhang: 0.9

@@ -1,10 +1,12 @@
 import os
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
+from matplotlib.patches import FancyArrow
 import numpy as np
 
 class Scene:
-    def __init__(self, rooms, instruction=""):
+    def __init__(self, config, rooms, instruction=""):
+        self.config = config.scene
         self.rooms = self.sort_rooms(rooms, instruction)
         
     def sort_rooms(self, rooms, instruction):
@@ -54,23 +56,19 @@ class Scene:
                                     line_style = '--'  # Dotted line for multiple objects
                                 else:
                                     line_style = '-'  # Solid line for single object
-                                line = mlines.Line2D([object_obj.center_position[0], receptacle_obj.center_placeholder_position[0]], 
-                                                    [object_obj.center_position[1], receptacle_obj.center_placeholder_position[1]], 
-                                                    linestyle=line_style, color='white', linewidth=float(os.environ['line_width']))
-                                ax.add_line(line)
+                                # line = mlines.Line2D([object_obj.center_position[0], receptacle_obj.center_placeholder_position[0]], 
+                                #                     [object_obj.center_position[1], receptacle_obj.center_placeholder_position[1]], 
+                                #                     linestyle=line_style, color='white', linewidth=self.config.linewidth)
+                                # ax.add_line(line)
                                 # Add arrow at the end of the line
-                                self.add_arrow(line, (receptacle_obj.center_placeholder_position[0], receptacle_obj.center_placeholder_position[1]))
+                                self.add_arrow(ax, object_obj.center_position, receptacle_obj.center_placeholder_position, line_style)
                             elif function_name == 'is_on_top':
                                 if len(object_names) > 1:
                                     line_style = '--'  # Dotted line for multiple objects
                                 else:
                                     line_style = '-'  # Solid line for single object
-                                line = mlines.Line2D([object_obj.center_position[0], receptacle_obj.top_placeholder_position[0]], 
-                                                    [object_obj.center_position[1], receptacle_obj.top_placeholder_position[1]], 
-                                                    linestyle=line_style, color='white', linewidth=float(os.environ['line_width']))
-                                ax.add_line(line)
                                 # Add arrow at the end of the line
-                                self.add_arrow(line, (receptacle_obj.top_placeholder_position[0], receptacle_obj.top_placeholder_position[1]))
+                                self.add_arrow(ax, object_obj.center_position,  receptacle_obj.top_placeholder_position, line_style)
 
     def plot_object_to_room_lines(self, object_names, room_names, ax):
         source_objects = []
@@ -90,25 +88,15 @@ class Scene:
                     line_style = '--'  # Dotted line for multiple objects
                 else:
                     line_style = '-'  # Solid line for single object
-                line = mlines.Line2D([object_obj.center_position[0], room_obj.center_position[0]], 
-                                    [object_obj.center_position[1], room_obj.center_position[1]], 
-                                    linestyle=line_style, color='white', linewidth=float(os.environ['line_width']))
-                ax.add_line(line)
-                # Add arrow at the end of the line
-                self.add_arrow(line, (room_obj.center_position[0], room_obj.center_position[1]))
 
-    def add_arrow(self, line, pos):
+                self.add_arrow(ax, object_obj.center_position, room_obj.center_position, line_style)
+
+    def add_arrow(self, ax, obj_loc, room_loc, line_style):
         """Add an arrow to the given line."""
-        xdata = line.get_xdata()
-        ydata = line.get_ydata()
-        dx = xdata[1] - xdata[0]
-        dy = ydata[1] - ydata[0]
-        # Normalize the arrow length to 0.1
-        scale = 0.1 / np.sqrt(dx**2 + dy**2)
-        dx *= scale
-        dy *= scale
-        line.axes.annotate('', xy=(pos[0] + 100*dx, pos[1] + 100*dy), xytext=(pos[0] - dx, pos[1] - dy),
-                            arrowprops=dict(facecolor='white', edgecolor='white', arrowstyle="->", linewidth=float(os.environ['line_width']), mutation_scale=4))
+        arrow = FancyArrow(obj_loc[0], obj_loc[1], room_loc[0] - obj_loc[0], room_loc[1] - obj_loc[1], linestyle=line_style,
+                        head_length=self.config.arrow.head_length, head_width=self.config.arrow.head_width, width=self.config.arrow.linewidth, linewidth=self.config.arrow.linewidth,
+                        length_includes_head=True, edgecolor='white', facecolor='white', overhang=self.config.arrow.overhang)
+        ax.add_patch(arrow)
 
     def plot(self, propositions=None):
         # Extract room names mentioned in propositions
@@ -124,29 +112,22 @@ class Scene:
                     mentioned_rooms += prop['args']['room_names']
 
         for room in self.rooms:
+            if room.room_id in mentioned_rooms:
+                room.plot_placeholder = True
+
+        for room in self.rooms:
             for item in mentioned_items:
                 found_receptacle = room.find_receptacle_by_id(item)
                 found_object = room.find_object_by_id(item)
                 if found_receptacle or found_object:
                     if room.room_id not in mentioned_rooms:
                         mentioned_rooms += [room.room_id]
-                        room.margin = room.margin * 2
                 if found_receptacle:
-                    if '@2x' not in found_receptacle.icon_path:
-                        found_receptacle.icon_path = found_receptacle.icon_path.replace('.png', '@2x.png')
-                        found_receptacle.plot_placeholder = True
-                        found_receptacle.init_size()
-                        room.init_size()
+                    found_receptacle.plot_placeholder = True
+
         for room in self.rooms:
             if room.room_id in mentioned_rooms:
-                for receptacle in room.receptacles:
-                    if '@2x' not in receptacle.icon_path:
-                        receptacle.icon_path = receptacle.icon_path.replace('.png', '@2x.png')
-                        receptacle.init_size()
-                        room.init_size()
-            else:
-                room.h_pad = 90
-                room.v_pad = 150
+                room.in_proposition=True
                 room.init_size()
 
         # Calculate total scene width based on the widths of all rooms
@@ -170,16 +151,36 @@ class Scene:
             if room.room_id in mentioned_rooms:
                 ax = room.plot(position=(first_row_position, 0), ax=ax)
                 first_row_position += room.width
-                
+
+        
+        total_rooms = len(self.rooms)
+        current_rooms_to_plot = []
         current_row_width = 0
-        current_row_height = -first_row_height
-        for room in self.rooms:
+        current_row_height = 0
+        i = 0
+        while i < total_rooms:
+            room = self.rooms[i]    
             if room.room_id not in mentioned_rooms:
-                if room.width + current_row_width > self.width:
-                    current_row_height -= first_row_height
+                if room.width + current_row_width <= self.width:
+                    current_row_width += room.width
+                    current_rooms_to_plot.append(room)
+                else:
+                    current_row_height -= max(room.height for room in current_rooms_to_plot)
                     current_row_width = 0
-                ax = room.plot(position=(current_row_width, current_row_height), ax=ax)
-                current_row_width += room.width
+                    for room in current_rooms_to_plot:
+                        ax = room.plot(position=(current_row_width, current_row_height), ax=ax)
+                        current_row_width += room.width
+                    current_row_width = 0
+                    current_rooms_to_plot = []
+                    continue
+            i+=1
+
+        current_row_height -= max(room.height for room in current_rooms_to_plot)
+        current_row_width = 0
+        for room in current_rooms_to_plot:
+            ax = room.plot(position=(current_row_width, current_row_height), ax=ax)
+            current_row_width += room.width
+        
 
         self.height_upper = first_row_height
         self.height_lower = current_row_height

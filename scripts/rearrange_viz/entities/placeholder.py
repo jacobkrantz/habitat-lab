@@ -3,14 +3,17 @@ from matplotlib.patches import FancyBboxPatch
 
 
 class Placeholder:
-    def __init__(self):
+    def __init__(self, config):
+        self.config = config.placeholder
         self.center_position = None
-
-        self.init_size()
-
-    def init_size(self):
-        self.width = 40
-        self.height = 40
+    
+    @property
+    def width(self):
+        return self.config.width
+    
+    @property
+    def height(self):
+        return self.config.height
 
     def plot(self, ax=None, position=(0, 0)):
         if ax is None:
@@ -28,7 +31,7 @@ class Placeholder:
             facecolor='black', 
             linewidth=0, 
             linestyle='-', 
-            boxstyle='Round, pad=0, rounding_size=4', 
+            boxstyle=f'Round, pad=0, rounding_size={self.config.rounding_size}', 
             alpha=1.0, 
         )
 

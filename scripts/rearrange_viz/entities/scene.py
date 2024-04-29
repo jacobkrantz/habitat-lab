@@ -5,11 +5,33 @@ from matplotlib.patches import FancyArrow
 import numpy as np
 
 class Scene:
+    """
+    Represents a scene consisting of multiple rooms and provides methods for plotting objects, receptacles, and relations between them.
+    """
+
     def __init__(self, config, rooms, instruction=""):
+        """
+        Initializes a Scene instance.
+
+        Parameters:
+            config (object): A configuration object containing parameters for scene rendering.
+            rooms (list): List of Room objects representing the rooms in the scene.
+            instruction (str, optional): Instruction string used for sorting rooms based on relevance. Defaults to "".
+        """
         self.config = config.scene
         self.rooms = self.sort_rooms(rooms, instruction)
         
     def sort_rooms(self, rooms, instruction):
+        """
+        Sorts rooms based on their relevance to an instruction.
+
+        Parameters:
+            rooms (list): List of Room objects representing the rooms to be sorted.
+            instruction (str): Instruction string used for sorting rooms.
+
+        Returns:
+            list: List of Room objects sorted by relevance.
+        """
         if not instruction:
             return rooms
 
@@ -39,6 +61,15 @@ class Scene:
         return sorted_rooms
         
     def plot_object_to_receptacle_lines(self, object_names, receptacle_names, function_name, ax):
+        """
+        Plots lines between objects and receptacles based on their relations.
+
+        Parameters:
+            object_names (list): List of object names.
+            receptacle_names (list): List of receptacle names.
+            function_name (str): Name of the relation function.
+            ax (matplotlib.axes.Axes): Axes to plot the lines on.
+        """
         for object_name in object_names:
             for room in self.rooms:
                 object_obj = room.find_object_by_id(object_name)
@@ -56,21 +87,23 @@ class Scene:
                                     line_style = '--'  # Dotted line for multiple objects
                                 else:
                                     line_style = '-'  # Solid line for single object
-                                # line = mlines.Line2D([object_obj.center_position[0], receptacle_obj.center_placeholder_position[0]], 
-                                #                     [object_obj.center_position[1], receptacle_obj.center_placeholder_position[1]], 
-                                #                     linestyle=line_style, color='white', linewidth=self.config.linewidth)
-                                # ax.add_line(line)
-                                # Add arrow at the end of the line
                                 self.add_arrow(ax, object_obj.center_position, receptacle_obj.center_placeholder_position, line_style)
                             elif function_name == 'is_on_top':
                                 if len(object_names) > 1:
                                     line_style = '--'  # Dotted line for multiple objects
                                 else:
                                     line_style = '-'  # Solid line for single object
-                                # Add arrow at the end of the line
                                 self.add_arrow(ax, object_obj.center_position,  receptacle_obj.top_placeholder_position, line_style)
 
     def plot_object_to_room_lines(self, object_names, room_names, ax):
+        """
+        Plots lines between objects and rooms based on their relations.
+
+        Parameters:
+            object_names (list): List of object names.
+            room_names (list): List of room names.
+            ax (matplotlib.axes.Axes): Axes to plot the lines on.
+        """
         source_objects = []
         target_rooms = []
         for object_name in object_names:
@@ -92,13 +125,31 @@ class Scene:
                 self.add_arrow(ax, object_obj.center_position, room_obj.center_position, line_style)
 
     def add_arrow(self, ax, obj_loc, room_loc, line_style):
-        """Add an arrow to the given line."""
+        """
+        Adds an arrow to the given line.
+
+        Parameters:
+            ax (matplotlib.axes.Axes): Axes to add the arrow to.
+            obj_loc (tuple): Location of the object.
+            room_loc (tuple): Location of the room.
+            line_style (str): Style of the line ('-' for solid, '--' for dashed).
+        """
         arrow = FancyArrow(obj_loc[0], obj_loc[1], room_loc[0] - obj_loc[0], room_loc[1] - obj_loc[1], linestyle=line_style,
                         head_length=self.config.arrow.head_length, head_width=self.config.arrow.head_width, width=self.config.arrow.linewidth, linewidth=self.config.arrow.linewidth,
                         length_includes_head=True, edgecolor='white', facecolor='white', overhang=self.config.arrow.overhang)
         ax.add_patch(arrow)
 
     def plot_rooms_linear(self, mentioned_rooms, ax):
+        """
+        Plots rooms linearly with names underneath.
+
+        Parameters:
+            mentioned_rooms (list): List of mentioned room names.
+            ax (matplotlib.axes.Axes): Axes to plot the rooms on.
+
+        Returns:
+            matplotlib.axes.Axes: Modified axes.
+        """
         # Plot rooms linearly with names underneath
         # Calculate total scene width based on the widths of all rooms
         self.width = sum(room.width for room in self.rooms if room.room_id in mentioned_rooms)
@@ -125,9 +176,14 @@ class Scene:
                     current_row_width += room.width
                     current_rooms_to_plot.append(room)
                 else:
-                    current_row_height -= max(room.height for room in current_rooms_to_plot)
+                    max_room_height_for_row = max(room.height for room in current_rooms_to_plot)
+                    rooms_have_objects = np.any([room.objects is not None and room.objects !=[] for room in current_rooms_to_plot])
+                    print(rooms_have_objects)
+                    current_row_height -= max_room_height_for_row
                     current_row_width = 0
                     for room in current_rooms_to_plot:
+                        if rooms_have_objects:
+                            room.use_full_height = True
                         ax = room.plot(position=(current_row_width, current_row_height), ax=ax)
                         current_row_width += room.width
                     current_row_width = 0
@@ -149,6 +205,15 @@ class Scene:
         return ax
 
     def plot(self, propositions=None):
+        """
+        Plots the scene.
+
+        Parameters:
+            propositions (list, optional): List of propositions containing relations between objects, receptacles, and rooms. Defaults to None.
+
+        Returns:
+            matplotlib.figure.Figure, matplotlib.axes.Axes: Figure and axes of the plotted scene.
+        """
         # Extract room names mentioned in propositions
         mentioned_items = []
         mentioned_rooms = []
@@ -177,7 +242,7 @@ class Scene:
 
         for room in self.rooms:
             if room.room_id in mentioned_rooms:
-                room.in_proposition=True
+                room.use_full_height=True
                 room.init_size()
 
         # Create a figure and axis for plotting the scene
@@ -206,3 +271,7 @@ class Scene:
         ax.set_xlim(0, self.width)
         ax.set_ylim(self.height_lower, self.height_upper)
         return fig, ax
+
+# TODO:
+# Think about using the initial object-receptacle mapping if needed
+# Get missing assets - shower, 

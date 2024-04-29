@@ -7,7 +7,20 @@ import textwrap
 from .constants import object_category_map, category_color_map
 
 class Object:
+    """
+    Represents an object in a 2D space and provides methods for plotting it.
+    """
+
     def __init__(self, config, object_id, icon_path=None):
+        """
+        Initializes an Object instance.
+
+        Parameters:
+            config (object): A configuration object containing parameters for object rendering.
+            object_id (str): Identifier for the object.
+            icon_path (str, optional): Path to the icon image file representing the object.
+                                       Defaults to None.
+        """
         self.object_id = object_id
         self.icon_path = icon_path
         self.config = config.object
@@ -15,13 +28,39 @@ class Object:
     
     @property
     def width(self):
+        """
+        Width of the object.
+
+        Returns:
+            float: Width of the object.
+        """
         return self.config.width
     
     @property
     def height(self):
+        """
+        Height of the object.
+
+        Returns:
+            float: Height of the object.
+        """
         return self.config.height
 
     def plot(self, ax=None, position=(0, 0)):
+        """
+        Plots the object on a matplotlib Axes.
+
+        Parameters:
+            ax (matplotlib.axes.Axes, optional): Axes to plot the object on.
+                                                 If None, a new figure and Axes will be created.
+                                                 Defaults to None.
+            position (tuple, optional): Position of the object's bottom-left corner.
+                                        Defaults to (0, 0).
+
+        Returns:
+            matplotlib.figure.Figure, matplotlib.axes.Axes or matplotlib.axes.Axes: If ax is None,
+            returns the created figure and axes. Otherwise, returns the modified axes.
+        """
         if ax is None:
             fig, ax = plt.subplots()
             created_fig = True

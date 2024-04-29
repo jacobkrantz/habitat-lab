@@ -1,7 +1,16 @@
 from PIL import Image, ImageChops
 
-
 def add_tint_to_rgb(image, tint_color):
+    """
+    Adds a tint color to the RGB channels of an image while preserving the alpha channel.
+
+    Parameters:
+        image (PIL.Image.Image): The original image.
+        tint_color (tuple): The RGB color tuple (r, g, b) to be applied as a tint.
+
+    Returns:
+        PIL.Image.Image: The tinted image with preserved alpha channel.
+    """
     # Extract the alpha channel from the original image
     r, g, b, alpha = image.split()
 

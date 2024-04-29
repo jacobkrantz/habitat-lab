@@ -1,13 +1,23 @@
-import os
 import matplotlib.pyplot as plt
 from PIL import Image
-import textwrap
 from .constants import receptacle_properties, receptacle_color_map
 from .placeholder import Placeholder
 from .utils import add_tint_to_rgb
 
 class Receptacle:
+    """
+    Represents a receptacle object in a 2D space and provides methods for plotting it.
+    """
+
     def __init__(self, config, receptacle_id, icon_path):
+        """
+        Initializes a Receptacle instance.
+
+        Parameters:
+            config (object): A configuration object containing parameters for receptacle rendering.
+            receptacle_id (str): Identifier for the receptacle.
+            icon_path (str): Path to the icon image file representing the receptacle.
+        """
         self.config = config.receptacle
         self.receptacle_id = receptacle_id
         self.icon_path = icon_path
@@ -18,9 +28,24 @@ class Receptacle:
 
     @property
     def horizontal_margin(self):
+        """
+        Horizontal margin of the receptacle.
+
+        Returns:
+            float: Horizontal margin of the receptacle.
+        """
         return self.config.horizontal_margin
 
     def resize_icon(self, icon):
+        """
+        Resizes the receptacle icon image.
+
+        Parameters:
+            icon (PIL.Image.Image): Icon image of the receptacle.
+
+        Returns:
+            PIL.Image.Image: Resized icon image.
+        """
         width, height = icon.size
         scaling_factor = self.config.target_height / height
 
@@ -31,6 +56,9 @@ class Receptacle:
         return resized_icon
 
     def init_size(self):
+        """
+        Initializes the size of the receptacle based on its icon image.
+        """
         icon = Image.open(self.icon_path)
         icon = self.resize_icon(icon)
         icon_width, icon_height = icon.size
@@ -38,6 +66,20 @@ class Receptacle:
         self.height = icon_height
 
     def plot(self, ax=None, position=(0, 0)):
+        """
+        Plots the receptacle on a matplotlib Axes.
+
+        Parameters:
+            ax (matplotlib.axes.Axes, optional): Axes to plot the receptacle on.
+                                                 If None, a new figure and Axes will be created.
+                                                 Defaults to None.
+            position (tuple, optional): Position of the receptacle's bottom-left corner.
+                                        Defaults to (0, 0).
+
+        Returns:
+            matplotlib.figure.Figure, matplotlib.axes.Axes or matplotlib.axes.Axes: If ax is None,
+            returns the created figure and axes. Otherwise, returns the modified axes.
+        """
         if ax is None:
             fig, ax = plt.subplots()
             created_fig = True
@@ -64,24 +106,17 @@ class Receptacle:
         if self.plot_placeholder:
             properties = receptacle_properties['_'.join(self.receptacle_id.split('_')[:-1])]
             if properties["is_on_top"]:
-                self.top_placeholder_position = (position[0] + self.width / 2 + self.horizontal_margin, position[1] + self.height + self.config.placeholder_margin)  # Update top position
+                self.top_placeholder_position = (position[0] + self.width / 2, position[1] + self.height + self.config.placeholder_margin)  # Update top position
                 self.top_placeholder = Placeholder(self.config)
                 top_placeholder_origin = (self.top_placeholder_position[0] - self.config.placeholder.width/2, self.top_placeholder_position[1] - self.config.placeholder.height/2 )
                 ax = self.top_placeholder.plot(ax, top_placeholder_origin)
                 
             if properties["is_inside"]:
-                self.center_placeholder_position = (position[0] + self.width / 2  + self.horizontal_margin, position[1] + self.height / 2)  # Update center position
+                self.center_placeholder_position = (position[0] + self.width / 2, position[1] + self.height / 2)  # Update center position
                 self.center_placeholder = Placeholder(self.config)
                 center_placeholder_origin = (self.center_placeholder_position[0] - self.config.placeholder.width/2, self.center_placeholder_position[1] - self.config.placeholder.height/2 )
                 ax = self.center_placeholder.plot(ax, center_placeholder_origin)
 
-        # # Wrap the text if it's longer than a certain length
-        # wrapped_text = textwrap.fill(self.receptacle_id, width=10)
-
-        # ax.annotate(wrapped_text, 
-        #             xy=((position[0] + self.width / 2), position[1] - 20),  # Use center position for annotation
-        #             ha='center', va='top', color='black', fontsize=int(os.environ['receptacle_text_size']), rotation=20)
-        
         ax.axis('off')
 
         if created_fig:

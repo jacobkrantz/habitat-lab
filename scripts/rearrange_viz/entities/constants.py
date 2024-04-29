@@ -36,7 +36,8 @@ receptacle_color_map = {
     "oven": (0.9, 0.3, 0.3),                    # Dark Red
     "sink": (0.7, 0.9, 1.0),                     # Light Blue
     "toilet": (0.7, 0.9, 1.0),                   # Light Blue (Similar to sink)
-    "wardrobe": (0.4, 0.2, 0.1)   # Dark Brown
+    "wardrobe": (0.4, 0.2, 0.1),                  # Dark Brown
+    "shower": (0.6, 0.8, 1.0)                    # Light Blue (Similar to sink and microwave)
 }
 
 object_category_map = {
@@ -172,4 +173,5 @@ receptacle_properties = {
     "sink": {"is_on_top": True, "is_inside": True, "is_same": True},
     "toilet": {"is_on_top": True, "is_inside": True, "is_same": False},
     "wardrobe": {"is_on_top": True, "is_inside": True, "is_same": False},
+    "shower": {"is_on_top": True, "is_inside": False, "is_same": False},
 }

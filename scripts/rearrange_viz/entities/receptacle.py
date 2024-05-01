@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 from PIL import Image
 from .constants import receptacle_properties, receptacle_color_map
 from .placeholder import Placeholder
@@ -65,6 +66,32 @@ class Receptacle:
         self.width = (icon_width + 2 * self.horizontal_margin)
         self.height = icon_height
 
+    def calculate_placeholder_heights(self, image):
+        """
+        Calculate the top and middle height of the object in the image.
+
+        Args:
+        - image: PIL Image object (RGBA)
+
+        Returns:
+        - center_height: Middle height of the object in the image
+        - top_height: Height of the non-empty part of the image from the top
+        """
+        alpha = np.array(image)[:, :, 3]
+        bottom = alpha.shape[0]+1
+        top = 0
+        for idx, row in enumerate(alpha):
+            row_sum = np.sum(row)
+            if row_sum != 0:
+                top = idx+1
+                break
+        top_height = bottom - top
+        center_height = top_height / 2
+        return center_height, top_height
+            
+
+        
+
     def plot(self, ax=None, position=(0, 0)):
         """
         Plots the receptacle on a matplotlib Axes.
@@ -101,18 +128,18 @@ class Receptacle:
             )
         )
 
-        self.center_placeholder_position = None
-        self.top_placeholder_position = None
+        center_height, top_height = self.calculate_placeholder_heights(icon)
+        self.center_placeholder_position = (position[0] + self.width / 2, position[1] + center_height)
+        self.top_placeholder_position = (position[0] + self.width / 2, position[1] + top_height + self.config.placeholder_margin)
+
         if self.plot_placeholder:
             properties = receptacle_properties['_'.join(self.receptacle_id.split('_')[:-1])]
             if properties["is_on_top"]:
-                self.top_placeholder_position = (position[0] + self.width / 2, position[1] + self.height + self.config.placeholder_margin)  # Update top position
                 self.top_placeholder = Placeholder(self.config)
                 top_placeholder_origin = (self.top_placeholder_position[0] - self.config.placeholder.width/2, self.top_placeholder_position[1] - self.config.placeholder.height/2 )
                 ax = self.top_placeholder.plot(ax, top_placeholder_origin)
                 
             if properties["is_inside"]:
-                self.center_placeholder_position = (position[0] + self.width / 2, position[1] + self.height / 2)  # Update center position
                 self.center_placeholder = Placeholder(self.config)
                 center_placeholder_origin = (self.center_placeholder_position[0] - self.config.placeholder.width/2, self.center_placeholder_position[1] - self.config.placeholder.height/2 )
                 ax = self.center_placeholder.plot(ax, center_placeholder_origin)

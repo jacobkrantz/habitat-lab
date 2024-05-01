@@ -139,7 +139,19 @@ class Scene:
                         length_includes_head=True, edgecolor='white', facecolor='white', overhang=self.config.arrow.overhang)
         ax.add_patch(arrow)
 
-    def plot_rooms_linear(self, mentioned_rooms, ax):
+    def redistribute_target_width_to_rooms(self, rooms_to_plot, target_width):
+        # Calculate total width of all rooms
+        total_width = sum(room.width for room in rooms_to_plot)
+        
+        # Calculate redistribution factor based on target width and total width
+        redistribution_factor = target_width / total_width
+        
+        # Redistribute width to each room based on their width ratios
+        redistributed_widths = [room.width * redistribution_factor for room in rooms_to_plot]
+        
+        return redistributed_widths
+        
+    def plot_rooms_linear(self, mentioned_rooms, ax, target_width=None):
         """
         Plots rooms linearly with names underneath.
 
@@ -150,59 +162,108 @@ class Scene:
         Returns:
             matplotlib.axes.Axes: Modified axes.
         """
-        # Plot rooms linearly with names underneath
-        # Calculate total scene width based on the widths of all rooms
-        self.width = sum(room.width for room in self.rooms if room.room_id in mentioned_rooms)
-        # Calculate scene height
-        first_row_height = max(room.height for room in self.rooms if room.room_id in mentioned_rooms)
 
-        # Calculate starting position of the first row to center it relative to the second row
-        first_row_position = 0
-        for room in self.rooms:
-            if room.room_id in mentioned_rooms:
-                ax = room.plot(position=(first_row_position, 0), ax=ax)
-                first_row_position += room.width
+        if target_width is None:
+            # Calculate starting position of the first row to center it relative to the second row
+            first_row_position = 0
+            for room in self.rooms:
+                if room.room_id in mentioned_rooms:
+                    ax = room.plot(position=(first_row_position, 0), ax=ax)
+                    first_row_position += room.width
 
-        
-        total_rooms = len(self.rooms)
-        current_rooms_to_plot = []
-        current_row_width = 0
-        current_row_height = 0
-        i = 0
-        while i < total_rooms:
-            room = self.rooms[i]    
-            if room.room_id not in mentioned_rooms:
+            # Calculate total scene width based on the widths of all rooms
+            self.width = first_row_position
+            # Calculate scene height
+            first_row_height = max(room.height for room in self.rooms if room.room_id in mentioned_rooms)
+
+            total_rooms = len(self.rooms)
+            current_rooms_to_plot = []
+            current_row_width = 0
+            current_row_height = 0
+            i = 0
+            while i < total_rooms:
+                room = self.rooms[i]    
+                if room.room_id not in mentioned_rooms:
+                    if room.width + current_row_width <= self.width:
+                        current_row_width += room.width
+                        current_rooms_to_plot.append(room)
+                    else:
+                        max_room_height_for_row = max(room.height for room in current_rooms_to_plot)
+                        rooms_have_objects = np.any([room.objects is not None and room.objects !=[] for room in current_rooms_to_plot])
+                        current_row_height -= max_room_height_for_row
+                        current_row_width = 0
+                        for room in current_rooms_to_plot:
+                            if rooms_have_objects:
+                                room.use_full_height = True
+                            ax = room.plot(position=(current_row_width, current_row_height), ax=ax)
+                            current_row_width += room.width
+                        current_row_width = 0
+                        current_rooms_to_plot = []
+                        continue
+                i+=1
+
+            current_row_height -= max(room.height for room in current_rooms_to_plot)
+            current_row_width = 0
+            for room in current_rooms_to_plot:
+                ax = room.plot(position=(current_row_width, current_row_height), ax=ax)
+                current_row_width += room.width
+            
+
+            self.height_upper = first_row_height
+            self.height_lower = current_row_height
+            self.height = self.height_upper - self.height_lower
+
+            return ax
+
+        else:
+            self.width = target_width
+            all_rooms = []
+            for room in self.rooms:
+                if room.room_id in mentioned_rooms:
+                    all_rooms.append(room)
+            for room in self.rooms:
+                if room.room_id not in mentioned_rooms:
+                    all_rooms.append(room)
+
+            current_rooms_to_plot = []
+            current_row_width = 0
+            current_row_height = 0
+            i = 0
+            while i < len(all_rooms):
+                room = all_rooms[i]  
                 if room.width + current_row_width <= self.width:
                     current_row_width += room.width
                     current_rooms_to_plot.append(room)
                 else:
-                    max_room_height_for_row = max(room.height for room in current_rooms_to_plot)
                     rooms_have_objects = np.any([room.objects is not None and room.objects !=[] for room in current_rooms_to_plot])
-                    print(rooms_have_objects)
-                    current_row_height -= max_room_height_for_row
+                    current_row_height -= max(room.height for room in current_rooms_to_plot)
                     current_row_width = 0
-                    for room in current_rooms_to_plot:
+                    room_target_widths = self.redistribute_target_width_to_rooms(current_rooms_to_plot, target_width)
+                    for room, room_target_width in zip(current_rooms_to_plot, room_target_widths):
                         if rooms_have_objects:
                             room.use_full_height = True
-                        ax = room.plot(position=(current_row_width, current_row_height), ax=ax)
+                        ax = room.plot(position=(current_row_width, current_row_height), ax=ax, target_width=room_target_width)
                         current_row_width += room.width
+                    self.width = max(current_row_width, self.width)
                     current_row_width = 0
                     current_rooms_to_plot = []
                     continue
-            i+=1
+                i+=1
 
-        current_row_height -= max(room.height for room in current_rooms_to_plot)
-        current_row_width = 0
-        for room in current_rooms_to_plot:
-            ax = room.plot(position=(current_row_width, current_row_height), ax=ax)
-            current_row_width += room.width
-        
+            rooms_have_objects = np.any([room.objects is not None and room.objects !=[] for room in current_rooms_to_plot])
+            current_row_height -= max(room.height for room in current_rooms_to_plot) 
+            current_row_width = 0
+            room_target_widths = self.redistribute_target_width_to_rooms(current_rooms_to_plot, target_width)
+            for room, room_target_width in zip(current_rooms_to_plot, room_target_widths):
+                ax = room.plot(position=(current_row_width, current_row_height), ax=ax, target_width=room_target_width)
+                current_row_width += room.width
+            self.width = max(current_row_width, self.width)
 
-        self.height_upper = first_row_height
-        self.height_lower = current_row_height
-        self.height = self.height_upper - self.height_lower
+            self.height_upper = 0
+            self.height_lower = current_row_height
+            self.height = self.height_upper - self.height_lower
 
-        return ax
+            return ax
 
     def plot(self, propositions=None):
         """
@@ -229,6 +290,7 @@ class Scene:
         for room in self.rooms:
             if room.room_id in mentioned_rooms:
                 room.plot_placeholder = True
+                room.use_full_height = True
 
         for room in self.rooms:
             for item in mentioned_items:
@@ -242,8 +304,8 @@ class Scene:
 
         for room in self.rooms:
             if room.room_id in mentioned_rooms:
-                room.use_full_height=True
-                room.init_size()
+                print(room.room_id)
+                room.in_proposition=True
 
         # Create a figure and axis for plotting the scene
         fig, ax = plt.subplots()
@@ -252,7 +314,7 @@ class Scene:
         # Set the background color of the figure
         fig.patch.set_facecolor(background_color)
 
-        ax = self.plot_rooms_linear(mentioned_rooms, ax)
+        ax = self.plot_rooms_linear(mentioned_rooms, ax, self.config.target_width)
 
         # Plot lines between objects and receptacles based on propositions
         if propositions:

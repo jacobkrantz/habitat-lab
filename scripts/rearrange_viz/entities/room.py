@@ -8,7 +8,7 @@ class Room:
     Represents a room in a 2D space and provides methods for plotting it.
     """
 
-    def __init__(self, config, room_id, receptacles, objects=None, use_full_height=False):
+    def __init__(self, config, room_id, receptacles, objects=None, use_full_height=False, in_proposition=False):
         """
         Initializes a Room instance.
 
@@ -23,6 +23,7 @@ class Room:
         self.room_id = room_id
         self.receptacles = receptacles
         self.objects = objects
+        self.in_proposition = in_proposition
         self.plot_placeholder = False
 
         if self.objects:
@@ -74,7 +75,7 @@ class Room:
                 return receptacle
         return None
 
-    def plot(self, position=(0, 0), ax=None):
+    def plot(self, position=(0, 0), ax=None, target_width=None):
         """
         Plots the room on a matplotlib Axes.
 
@@ -95,21 +96,29 @@ class Room:
             created_fig = False
 
         new_position = [position[0] + self.config.horizontal_margin, position[1] + self.config.vertical_margin]
-
-        # Calculate initial offset considering left margin and horizontal padding
-        offset = new_position[0] + self.config.left_pad
-        for receptacle in self.receptacles:
-            ax = receptacle.plot(ax, position=(offset, new_position[1] + self.config.bottom_pad))
-            offset += receptacle.width
         
         # Calculate total room width including margins
         total_receptacle_width = max(
             self.config.min_width, 
             sum(receptacle.width for receptacle in self.receptacles)
         )
+        
         # Need to calculate room width AFTER plotting
         self.room_width = total_receptacle_width + self.config.left_pad + self.config.right_pad
-        self.width = self.room_width + 2 * self.config.horizontal_margin 
+        if target_width is None:
+            extra_horizontal_pad = 0
+        else:
+            extra_horizontal_pad = max(0, (target_width - self.room_width - 2 * self.config.horizontal_margin)/2)
+        
+        self.room_width = self.room_width + 2 * extra_horizontal_pad
+
+        # Calculate initial offset considering left margin and horizontal padding
+        offset = new_position[0] + self.config.left_pad + extra_horizontal_pad
+        for receptacle in self.receptacles:
+            ax = receptacle.plot(ax, position=(offset, new_position[1] + self.config.bottom_pad))
+            offset += receptacle.width
+        
+        self.width = self.room_width + 2 * self.config.horizontal_margin
         
         # Calculate text annotation position
         text_x = new_position[0] + self.room_width / 2
@@ -121,7 +130,7 @@ class Room:
         ax.annotate(wrapped_text, xy=(text_x, text_y), xytext=(text_x, text_y),
                     ha='center', va='bottom', fontsize=self.config.text_size)
 
-        self.room_height = self.config.full_height + self.config.bottom_pad + self.config.top_pad   
+        self.room_height = self.config.full_height + self.config.bottom_pad + self.config.top_pad
         if self.objects:
             # Calculate initial offset for objects considering left margin, horizontal padding, and spacing objects evenly
             total_object_width = sum(obj.width for obj in self.objects)
@@ -138,7 +147,17 @@ class Room:
         
         self.center_position = (new_position[0] + self.room_width / 2, new_position[1] + self.room_height / 2) 
 
-        rect = ax.add_patch(plt.Rectangle((new_position[0], new_position[1]), self.room_width , self.room_height , color='#5A6F8E', alpha=self.config.box_alpha))
+        if not self.in_proposition:
+            rect = ax.add_patch(plt.Rectangle((new_position[0], new_position[1]), self.room_width , self.room_height , color='#5A6F8E', alpha=self.config.box_alpha))
+        else:
+            border_width = self.config.border_width
+            rect = ax.add_patch(plt.Rectangle((new_position[0] + border_width, new_position[1] + border_width), 
+                                            self.room_width - 2 * border_width, 
+                                            self.room_height - 2 * border_width, 
+                                            edgecolor='white', 
+                                            linewidth=border_width, 
+                                            facecolor='#5A6F8E',
+                                            alpha=self.config.box_alpha))
         # Set the z-order of the rectangle
         rect.set_zorder(-1)
         

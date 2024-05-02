@@ -280,7 +280,7 @@ class Scene:
         mentioned_rooms = []
         if propositions:
             for prop in propositions:
-                if prop["function_name"] in ["is_in_room", "is_inside"]:
+                if prop["function_name"] in ["is_on_top", "is_inside"]:
                     mentioned_items += prop['args']['object_names']
                     mentioned_items += prop['args']['receptacle_names']
                 elif prop["function_name"] == "is_in_room":

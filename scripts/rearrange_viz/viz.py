@@ -5,6 +5,7 @@ import argparse
 from entities import Scene, Room, Receptacle, Object
 from omegaconf import OmegaConf
 import matplotlib.font_manager as font_manager
+from tqdm import tqdm
 
 def load_configuration():
     """
@@ -41,6 +42,7 @@ def plot_object(config, object_id, save_path=None):
         plt.savefig(save_path, dpi=400)
     else:
         plt.show()
+    plt.close()
 
 def plot_receptacle(config, receptacle_id, icon_path, save_path=None):
     """
@@ -52,6 +54,7 @@ def plot_receptacle(config, receptacle_id, icon_path, save_path=None):
         plt.savefig(save_path, dpi=400)
     else:
         plt.show()
+    plt.close()
 
 def plot_room(config, room_id, episode_data, receptacle_icon_mapping, save_path=None):
     """
@@ -70,6 +73,7 @@ def plot_room(config, room_id, episode_data, receptacle_icon_mapping, save_path=
         plt.savefig(save_path, dpi=400)
     else:
         plt.show()
+    plt.close()
 
 def plot_scene(config, episode_data, propositions, receptacle_icon_mapping, save_path=None):
     """
@@ -95,6 +99,7 @@ def plot_scene(config, episode_data, propositions, receptacle_icon_mapping, save
         plt.savefig(save_path, dpi=300)
     else:
         plt.show()
+    plt.close()
 
 def parse_arguments():
     """
@@ -107,7 +112,7 @@ def parse_arguments():
     parser.add_argument('--object-id', type=str, help='ID of a specific object to plot')
     parser.add_argument('--receptacle-id', type=str, help='ID of a specific receptacle to plot')
     parser.add_argument('--room-id', type=str, help='ID of a specific room to plot')
-    parser.add_argument('--save-path', type=str, help='Path to save the figure')
+    parser.add_argument('--save-path', type=str, help='Directory to save the figures')
     return parser.parse_args()
 
 def main():
@@ -127,34 +132,49 @@ def main():
     plt.rcParams["font.weight"] = "bold"
     plt.rcParams['text.color'] = "white"
 
-    episode_data = load_episode_data(args.episode_data_dir, args.episode_id)
-    handle_to_recep = {v:k for k, v in episode_data["recep_to_handle"].items()}
-    handle_to_object = {v:k for k, v in episode_data["object_to_handle"].items()}
-    receptacle_icon_mapping = {
-        receptacle_id: f'receptacles/{receptacle_id.split("_")[0]}@2x.png'
-        for receptacle_id in episode_data['recep_to_description']
-        if os.path.exists(f'receptacles/{receptacle_id.split("_")[0]}@2x.png')
-    }
-
-    run_data = load_run_data(args.run_json, args.episode_id)
-    propositions = run_data["evaluation_propositions"]
-    for proposition in propositions:
-        proposition["args"]["object_names"] = []
-        for object_handle in proposition["args"]["object_handles"]:
-            proposition["args"]["object_names"].append(handle_to_object[object_handle])
-        
-        proposition["args"]["receptacle_names"] = []
-        for recep_handle in proposition["args"]["receptacle_handles"]:
-            proposition["args"]["receptacle_names"].append(handle_to_recep[recep_handle])
-
-    if args.object_id:
-        plot_object(config, args.object_id, args.save_path)
-    elif args.receptacle_id:
-        plot_receptacle(config, args.receptacle_id, receptacle_icon_mapping[args.receptacle_id], args.save_path)
-    elif args.room_id:
-        plot_room(config, args.room_id, episode_data, receptacle_icon_mapping, args.save_path)
+    if args.episode_id is not None:
+        episode_ids = [args.episode_id]
     else:
-        plot_scene(config, episode_data, propositions, receptacle_icon_mapping, args.save_path)
+        episode_ids = sorted([int(filename.split('_')[1].split('.')[0]) for filename in os.listdir(args.episode_data_dir) if filename.startswith('episode_')])
 
+    for episode_id in tqdm(episode_ids):
+        try:
+            episode_data = load_episode_data(args.episode_data_dir, episode_id)
+            handle_to_recep = {v:k for k, v in episode_data["recep_to_handle"].items()}
+            handle_to_object = {v:k for k, v in episode_data["object_to_handle"].items()}
+            for receptacle_id in episode_data['recep_to_description']:
+                if not os.path.exists(f'receptacles/{"_".join(receptacle_id.split("_")[:-1])}@2x.png'):
+                    print(f"Missing receptacle asset for receptacle ID: {receptacle_id}")
+
+            receptacle_icon_mapping = {
+                receptacle_id: f'receptacles/{receptacle_id.split("_")[0]}@2x.png'
+                for receptacle_id in episode_data['recep_to_description']
+                if os.path.exists(f'receptacles/{receptacle_id.split("_")[0]}@2x.png')
+            }
+
+            run_data = load_run_data(args.run_json, episode_id)
+            propositions = run_data["evaluation_propositions"]
+            for proposition in propositions:
+                proposition["args"]["object_names"] = []
+                for object_handle in proposition["args"]["object_handles"]:
+                    proposition["args"]["object_names"].append(handle_to_object[object_handle])
+                
+                proposition["args"]["receptacle_names"] = []
+                for recep_handle in proposition["args"]["receptacle_handles"]:
+                    proposition["args"]["receptacle_names"].append(handle_to_recep[recep_handle])
+
+            save_directory = args.save_path if args.save_path else f"visualization_{episode_id}"
+            os.makedirs(save_directory, exist_ok=True)
+            
+            if args.object_id:
+                plot_object(config, args.object_id, os.path.join(save_directory, f"viz_{episode_id}.png"))
+            elif args.receptacle_id:
+                plot_receptacle(config, args.receptacle_id, receptacle_icon_mapping[args.receptacle_id], os.path.join(save_directory, f"viz_{episode_id}.png"))
+            elif args.room_id:
+                plot_room(config, args.room_id, episode_data, receptacle_icon_mapping, os.path.join(save_directory, f"viz_{episode_id}.png"))
+            else:
+                plot_scene(config, episode_data, propositions, receptacle_icon_mapping, os.path.join(save_directory, f"viz_{episode_id}.png"))
+        except Exception as e:
+            print(e)
 if __name__ == "__main__":
     main()

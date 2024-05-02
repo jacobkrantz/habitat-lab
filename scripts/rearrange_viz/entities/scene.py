@@ -280,12 +280,14 @@ class Scene:
         mentioned_rooms = []
         if propositions:
             for prop in propositions:
-                if prop["function_name"] != "is_in_room":
+                if prop["function_name"] in ["is_in_room", "is_inside"]:
                     mentioned_items += prop['args']['object_names']
                     mentioned_items += prop['args']['receptacle_names']
-                else:
+                elif prop["function_name"] == "is_in_room":
                     mentioned_items += prop['args']['object_names']
                     mentioned_rooms += prop['args']['room_names']
+                else:
+                    raise NotImplementedError(f"Not implemented for function with name: {prop['function_name']}.")
 
         for room in self.rooms:
             if room.room_id in mentioned_rooms:
@@ -304,7 +306,6 @@ class Scene:
 
         for room in self.rooms:
             if room.room_id in mentioned_rooms:
-                print(room.room_id)
                 room.in_proposition=True
 
         # Create a figure and axis for plotting the scene

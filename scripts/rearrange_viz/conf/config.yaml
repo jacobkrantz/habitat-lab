@@ -44,3 +44,4 @@ scene:
     linewidth: 2
     overhang: 0.9
   target_width: 4000
+  instruction_text_size: 45

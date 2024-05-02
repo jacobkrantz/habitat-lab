@@ -19,6 +19,7 @@ class Scene:
             instruction (str, optional): Instruction string used for sorting rooms based on relevance. Defaults to "".
         """
         self.config = config.scene
+        self.instruction = instruction
         self.rooms = self.sort_rooms(rooms, instruction)
         
     def sort_rooms(self, rooms, instruction):
@@ -333,6 +334,11 @@ class Scene:
         # Set axis limits
         ax.set_xlim(0, self.width)
         ax.set_ylim(self.height_lower, self.height_upper)
+        
+        # Add instruction on top
+        if self.instruction:
+            ax.text(0.5, 1.05, self.instruction, horizontalalignment='center', verticalalignment='center', transform=ax.transAxes, fontsize=self.config.instruction_text_size)
+
         return fig, ax
 
 # TODO:

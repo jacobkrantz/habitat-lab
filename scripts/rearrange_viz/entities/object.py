@@ -95,7 +95,8 @@ class Object:
 
         self.center_position = (position[0] + self.config.width / 2, position[1] + self.config.height / 2)
         text_position = (self.center_position[0], self.center_position[1] + self.config.text_margin)
-        ax.annotate(self.object_id, 
+        wrapped_text = textwrap.fill(self.object_id, width=self.config.textwrap_width)
+        ax.annotate(wrapped_text, 
                     xy=text_position,
                     ha='center', va='top', fontsize=self.config.text_size)
         

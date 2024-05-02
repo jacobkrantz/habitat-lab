@@ -2,11 +2,12 @@ defaults:
   - object: default
 
 object:
-  text_margin: 60
+  text_margin: 100
   width: 50
   height: 50
   text_size: 30
   rounding_size: 10
+  textwrap_width: 15
 
 receptacle:
   horizontal_margin: 5
@@ -33,7 +34,7 @@ room:
   half_height: 300
   objects_height: 500
   min_width: 100
-  object_horizontal_margin_fraction: 0.15 # Fraction on each side to skip
+  object_horizontal_margin_fraction: 0.05 # Fraction on each side to skip
   text_size: 30
   border_width: 10
 

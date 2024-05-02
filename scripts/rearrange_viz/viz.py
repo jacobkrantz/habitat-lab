@@ -7,6 +7,8 @@ from omegaconf import OmegaConf
 import matplotlib.font_manager as font_manager
 from tqdm import tqdm
 import traceback
+import matplotlib
+matplotlib.use('Agg')
 
 def load_configuration():
     """
@@ -43,7 +45,9 @@ def plot_object(config, object_id, save_path=None):
         plt.savefig(save_path, dpi=400)
     else:
         plt.show()
+    fig.clear()
     plt.close()
+    del object
 
 def plot_receptacle(config, receptacle_id, icon_path, save_path=None):
     """
@@ -55,7 +59,9 @@ def plot_receptacle(config, receptacle_id, icon_path, save_path=None):
         plt.savefig(save_path, dpi=400)
     else:
         plt.show()
+    fig.clear()
     plt.close()
+    del receptacle
 
 def plot_room(config, room_id, episode_data, receptacle_icon_mapping, save_path=None):
     """
@@ -74,7 +80,10 @@ def plot_room(config, room_id, episode_data, receptacle_icon_mapping, save_path=
         plt.savefig(save_path, dpi=400)
     else:
         plt.show()
+    fig.clear()
     plt.close()
+    room.cleanup()
+    del room
 
 def plot_scene(config, episode_data, propositions, receptacle_icon_mapping, save_path=None):
     """
@@ -100,7 +109,10 @@ def plot_scene(config, episode_data, propositions, receptacle_icon_mapping, save
         plt.savefig(save_path, dpi=300)
     else:
         plt.show()
+    fig.clear()
     plt.close()
+    scene.cleanup()
+    del scene
 
 def parse_arguments():
     """
@@ -180,6 +192,7 @@ def main():
                 plot_room(config, args.room_id, episode_data, receptacle_icon_mapping, os.path.join(save_directory, f"viz_{episode_id}.png"))
             else:
                 plot_scene(config, episode_data, propositions, receptacle_icon_mapping, os.path.join(save_directory, f"viz_{episode_id}.png"))
+
         except Exception:
             print(f"Episode ID: {episode_id}")
             print(traceback.format_exc())

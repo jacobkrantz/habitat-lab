@@ -21,7 +21,13 @@ class Scene:
         self.config = config.scene
         self.instruction = instruction
         self.rooms = self.sort_rooms(rooms, instruction)
-        
+
+    def cleanup(self):
+        if self.rooms:
+            for room in self.rooms:
+                room.cleanup()
+                del room
+
     def sort_rooms(self, rooms, instruction):
         """
         Sorts rooms based on their relevance to an instruction.
@@ -338,7 +344,15 @@ class Scene:
         
         # Add instruction on top
         if self.instruction:
+            # Splitting instruction into two lines if it's too long
+            if len(self.instruction) > 50:
+                instruction_lines = self.instruction.split(' ')
+                mid_index = len(instruction_lines) // 2
+                instruction_lines.insert(mid_index, '\n')
+                self.instruction = ' '.join(instruction_lines)
+                
             ax.text(0.5, 1.05, self.instruction, horizontalalignment='center', verticalalignment='center', transform=ax.transAxes, fontsize=self.config.instruction_text_size)
+
 
         return fig, ax
 

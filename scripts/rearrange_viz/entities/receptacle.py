@@ -88,9 +88,6 @@ class Receptacle:
         top_height = bottom - top
         center_height = top_height / 2
         return center_height, top_height
-            
-
-        
 
     def plot(self, ax=None, position=(0, 0)):
         """
@@ -150,3 +147,4 @@ class Receptacle:
             return fig, ax
         else:
             return ax
+    

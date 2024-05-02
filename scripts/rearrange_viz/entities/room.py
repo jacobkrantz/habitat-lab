@@ -37,13 +37,31 @@ class Room:
         """
         Initializes the size of the room based on its receptacles and objects.
         """
-        total_receptacle_width = max(self.config.min_width, sum(receptacle.width for receptacle in self.receptacles))
+        min_width = self.config.min_width
+        if self.objects:
+            object_widths = 0
+            for object in self.objects:
+                object_widths += object.width
+                
+            min_width = max(min_width, object_widths * 3)
+        total_receptacle_width = max(min_width, sum(receptacle.width for receptacle in self.receptacles))
         self.room_width = total_receptacle_width + self.config.left_pad + self.config.right_pad
         self.width = self.room_width + 2 * self.config.horizontal_margin
  
         self.room_height = (self.config.full_height if self.use_full_height else self.config.half_height) + self.config.bottom_pad + self.config.top_pad
         self.height = self.room_height + 2 * self.config.vertical_margin
-        
+
+    def cleanup(self):
+        """Cleanup objects and receptacles."""
+        if self.objects:
+            for obj in self.objects:
+                del obj
+            self.objects.clear()
+        if self.receptacles:
+            for recep in self.receptacles:
+                del recep
+            self.receptacles.clear()
+      
     def find_object_by_id(self, object_id):
         """
         Find an object by its ID.
@@ -97,9 +115,17 @@ class Room:
 
         new_position = [position[0] + self.config.horizontal_margin, position[1] + self.config.vertical_margin]
         
+        min_width = self.config.min_width
+        if self.objects:
+            object_widths = 0
+            for object in self.objects:
+                object_widths += object.width
+                
+            min_width = max(min_width, object_widths * 3)
+
         # Calculate total room width including margins
         total_receptacle_width = max(
-            self.config.min_width, 
+            min_width, 
             sum(receptacle.width for receptacle in self.receptacles)
         )
         

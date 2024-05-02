@@ -256,6 +256,8 @@ class Scene:
             current_row_width = 0
             room_target_widths = self.redistribute_target_width_to_rooms(current_rooms_to_plot, target_width)
             for room, room_target_width in zip(current_rooms_to_plot, room_target_widths):
+                if rooms_have_objects:
+                    room.use_full_height = True
                 ax = room.plot(position=(current_row_width, current_row_height), ax=ax, target_width=room_target_width)
                 current_row_width += room.width
             self.width = max(current_row_width, self.width)
@@ -293,7 +295,6 @@ class Scene:
         for room in self.rooms:
             if room.room_id in mentioned_rooms:
                 room.plot_placeholder = True
-                room.use_full_height = True
 
         for room in self.rooms:
             for item in mentioned_items:

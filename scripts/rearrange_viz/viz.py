@@ -6,6 +6,7 @@ from entities import Scene, Room, Receptacle, Object
 from omegaconf import OmegaConf
 import matplotlib.font_manager as font_manager
 from tqdm import tqdm
+import traceback
 
 def load_configuration():
     """
@@ -142,6 +143,7 @@ def main():
             episode_data = load_episode_data(args.episode_data_dir, episode_id)
             handle_to_recep = {v:k for k, v in episode_data["recep_to_handle"].items()}
             handle_to_object = {v:k for k, v in episode_data["object_to_handle"].items()}
+            id_to_room = {v:k for k, v in episode_data["room_to_id"].items()}
             for receptacle_id in episode_data['recep_to_description']:
                 if not os.path.exists(f'receptacles/{"_".join(receptacle_id.split("_")[:-1])}@2x.png'):
                     print(f"Missing receptacle asset for receptacle ID: {receptacle_id}")
@@ -158,11 +160,15 @@ def main():
                 proposition["args"]["object_names"] = []
                 for object_handle in proposition["args"]["object_handles"]:
                     proposition["args"]["object_names"].append(handle_to_object[object_handle])
-                
-                proposition["args"]["receptacle_names"] = []
-                for recep_handle in proposition["args"]["receptacle_handles"]:
-                    proposition["args"]["receptacle_names"].append(handle_to_recep[recep_handle])
+                if "receptacle_handles" in proposition["args"]:
+                    proposition["args"]["receptacle_names"] = []
+                    for recep_handle in proposition["args"]["receptacle_handles"]:
+                        proposition["args"]["receptacle_names"].append(handle_to_recep[recep_handle])
 
+                if "room_ids" in proposition["args"]:
+                    proposition["args"]["room_names"] = []
+                    for room_id in proposition["args"]["room_ids"]:
+                        proposition["args"]["room_names"].append(id_to_room[room_id])
             save_directory = args.save_path if args.save_path else f"visualization_{episode_id}"
             os.makedirs(save_directory, exist_ok=True)
             
@@ -174,7 +180,8 @@ def main():
                 plot_room(config, args.room_id, episode_data, receptacle_icon_mapping, os.path.join(save_directory, f"viz_{episode_id}.png"))
             else:
                 plot_scene(config, episode_data, propositions, receptacle_icon_mapping, os.path.join(save_directory, f"viz_{episode_id}.png"))
-        except Exception as e:
-            print(e)
+        except Exception:
+            print(f"Episode ID: {episode_id}")
+            print(traceback.format_exc())
 if __name__ == "__main__":
     main()

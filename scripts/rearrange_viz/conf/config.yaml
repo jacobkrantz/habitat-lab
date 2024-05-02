@@ -33,7 +33,7 @@ room:
   half_height: 300
   objects_height: 500
   min_width: 100
-  object_block_horizontal_margin: 300 # Percentage on each side to skip
+  object_horizontal_margin_fraction: 0.15 # Fraction on each side to skip
   text_size: 30
   border_width: 10
 

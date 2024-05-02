@@ -134,11 +134,13 @@ class Room:
         if self.objects:
             # Calculate initial offset for objects considering left margin, horizontal padding, and spacing objects evenly
             total_object_width = sum(obj.width for obj in self.objects)
-            spacing = (self.room_width - total_object_width - self.config.object_block_horizontal_margin * 2) / (len(self.objects) + 1)
-            offset = new_position[0] + spacing + self.config.object_block_horizontal_margin
+            num_objects = len(self.objects)
+            spacing = ((self.room_width - self.config.object_horizontal_margin_fraction * 2 * self.room_width) - total_object_width) / (num_objects + 1)
+            offset = new_position[0] + self.config.object_horizontal_margin_fraction * self.room_width + spacing
+
             for obj in self.objects:
-                ax = obj.plot(ax, position=(offset, new_position[1] + self.config.objects_height))  # Offset for objects above receptacles
-                offset += obj.width + spacing  # Increment offset for next object and spacing
+                ax = obj.plot(ax, position=(offset, new_position[1] + self.config.objects_height))
+                offset += obj.width + spacing
             
         else:
             if not self.use_full_height:

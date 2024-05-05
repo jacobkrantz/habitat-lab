@@ -158,7 +158,7 @@ class Scene:
         
         return redistributed_widths
         
-    def plot_rooms_linear(self, mentioned_rooms, ax, target_width=None):
+    def plot_rooms_linear(self, mentioned_rooms, ax, target_width=None, height_offset=0):
         """
         Plots rooms linearly with names underneath.
 
@@ -186,7 +186,7 @@ class Scene:
             total_rooms = len(self.rooms)
             current_rooms_to_plot = []
             current_row_width = 0
-            current_row_height = 0
+            current_row_height = 0 + height_offset
             i = 0
             while i < total_rooms:
                 room = self.rooms[i]    
@@ -202,6 +202,8 @@ class Scene:
                         for room in current_rooms_to_plot:
                             if rooms_have_objects:
                                 room.use_full_height = True
+                            else:
+                                room.use_full_height = False
                             ax = room.plot(position=(current_row_width, current_row_height), ax=ax)
                             current_row_width += room.width
                         current_row_width = 0
@@ -216,11 +218,10 @@ class Scene:
                 current_row_width += room.width
             
 
-            self.height_upper = first_row_height
-            self.height_lower = current_row_height
-            self.height = self.height_upper - self.height_lower
+            height_upper = first_row_height
+            height_lower = current_row_height
 
-            return ax
+            return ax, height_lower, height_upper
 
         else:
             self.width = target_width
@@ -231,10 +232,13 @@ class Scene:
             for room in self.rooms:
                 if room.room_id not in mentioned_rooms:
                     all_rooms.append(room)
+            # NOTE: This is needed to get back to original width after every call of this method
+            for room in self.rooms:
+                room.init_size()
 
             current_rooms_to_plot = []
             current_row_width = 0
-            current_row_height = 0
+            current_row_height = 0 + height_offset
             i = 0
             while i < len(all_rooms):
                 room = all_rooms[i]  
@@ -243,12 +247,17 @@ class Scene:
                     current_rooms_to_plot.append(room)
                 else:
                     rooms_have_objects = np.any([room.objects is not None and room.objects !=[] for room in current_rooms_to_plot])
+                    for room in current_rooms_to_plot:
+                        if rooms_have_objects:
+                            room.use_full_height = True
+                            room.init_size()
+                        else:
+                            room.use_full_height = False
+                            room.init_size()
                     current_row_height -= max(room.height for room in current_rooms_to_plot)
                     current_row_width = 0
                     room_target_widths = self.redistribute_target_width_to_rooms(current_rooms_to_plot, target_width)
                     for room, room_target_width in zip(current_rooms_to_plot, room_target_widths):
-                        if rooms_have_objects:
-                            room.use_full_height = True
                         ax = room.plot(position=(current_row_width, current_row_height), ax=ax, target_width=room_target_width)
                         current_row_width += room.width
                     self.width = max(current_row_width, self.width)
@@ -258,32 +267,28 @@ class Scene:
                 i+=1
 
             rooms_have_objects = np.any([room.objects is not None and room.objects !=[] for room in current_rooms_to_plot])
+            for room in current_rooms_to_plot:
+                if rooms_have_objects:
+                    room.use_full_height = True
+                    room.init_size()
+                else:
+                    room.use_full_height = False
+                    room.init_size()
             current_row_height -= max(room.height for room in current_rooms_to_plot) 
             current_row_width = 0
             room_target_widths = self.redistribute_target_width_to_rooms(current_rooms_to_plot, target_width)
             for room, room_target_width in zip(current_rooms_to_plot, room_target_widths):
-                if rooms_have_objects:
-                    room.use_full_height = True
                 ax = room.plot(position=(current_row_width, current_row_height), ax=ax, target_width=room_target_width)
                 current_row_width += room.width
             self.width = max(current_row_width, self.width)
 
-            self.height_upper = 0
-            self.height_lower = current_row_height
-            self.height = self.height_upper - self.height_lower
+            height_upper = 0
+            height_lower = current_row_height
+            # self.height = self.height_upper - self.height_lower
 
-            return ax
-
-    def plot(self, propositions=None):
-        """
-        Plots the scene.
-
-        Parameters:
-            propositions (list, optional): List of propositions containing relations between objects, receptacles, and rooms. Defaults to None.
-
-        Returns:
-            matplotlib.figure.Figure, matplotlib.axes.Axes: Figure and axes of the plotted scene.
-        """
+            return ax, height_lower, height_upper
+        
+    def plot_for_propositions(self, propositions, show_instruction=True, height_offset=0, ax=None):
         # Extract room names mentioned in propositions
         mentioned_objs = []
         mentioned_receps = []
@@ -329,13 +334,13 @@ class Scene:
                 room.in_proposition=True
 
         # Create a figure and axis for plotting the scene
-        fig, ax = plt.subplots()
-        
-        background_color = "#3E4C60"
-        # Set the background color of the figure
-        fig.patch.set_facecolor(background_color)
+        if ax is None:
+            fig, ax = plt.subplots()
+            background_color = "#3E4C60"
+            # Set the background color of the figure
+            fig.patch.set_facecolor(background_color)
 
-        ax = self.plot_rooms_linear(mentioned_rooms, ax, self.config.target_width)
+        ax, height_lower, height_upper = self.plot_rooms_linear(mentioned_rooms, ax, self.config.target_width, height_offset)
 
         # Plot lines between objects and receptacles based on propositions
         if propositions:
@@ -352,10 +357,10 @@ class Scene:
 
         # Set axis limits
         ax.set_xlim(0, self.width)
-        ax.set_ylim(self.height_lower, self.height_upper)
+        ax.set_ylim(height_lower, height_upper)
         
         # Add instruction on top
-        if self.instruction:
+        if self.instruction and show_instruction:
             # Splitting instruction into two lines if it's too long
             if len(self.instruction) > 50:
                 instruction_lines = self.instruction.split(' ')
@@ -365,8 +370,53 @@ class Scene:
                 
             ax.text(0.5, 1.05, self.instruction, horizontalalignment='center', verticalalignment='center', transform=ax.transAxes, fontsize=self.config.instruction_text_size)
 
+        if ax is None:
+            return fig, ax, height_lower, height_upper
+        else:
+            return ax, height_lower, height_upper
 
-        return fig, ax
+    def plot(self, propositions=None, constraints=None):
+        """
+        Plots the scene.
+
+        Parameters:
+            propositions (list, optional): List of propositions containing relations between objects, receptacles, and rooms. Defaults to None.
+
+        Returns:
+            matplotlib.figure.Figure, matplotlib.axes.Axes: Figure and axes of the plotted scene.
+        """
+        assert constraints is not None, "All propositions should have atleast `TerminalSatisfactionConstraint`. Found no constraints instead."
+        assert propositions is not None, "Plotting without propositions is not supported."
+        toposort = []
+        for constraint in constraints:
+            if constraint["type"] == "TemporalConstraint":
+                toposort = constraint["toposort"]
+        if toposort:
+            max_upper = 0
+            min_lower = 0
+            fig, ax = plt.subplots()
+            background_color = "#3E4C60"
+            # Set the background color of the figure
+            fig.patch.set_facecolor(background_color)
+            for level_idx, current_level in enumerate(toposort):
+                if level_idx == 0:
+                    show_instruction = True
+                else:
+                    show_instruction = False
+                current_propositions = [propositions[idx] for idx in current_level]
+                ax, height_lower, height_upper = self.plot_for_propositions(current_propositions, show_instruction=show_instruction, height_offset=min_lower, ax=ax)
+                # Plot horizontal line
+                ax.axhline(y=height_lower-20, color='r', linewidth=4, linestyle='-')
+
+                max_upper = max(height_upper, max_upper)
+                min_lower = min(height_lower-40, min_lower)
+            self.height = max_upper - min_lower
+            return fig, ax
+        else:
+            fig, ax, height_lower, height_upper = self.plot_for_propositions(propositions)
+            self.height = height_upper - height_lower
+            return fig, ax
+        
 
 # TODO:
 # Think about using the initial object-receptacle mapping if needed

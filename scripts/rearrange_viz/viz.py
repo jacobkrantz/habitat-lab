@@ -8,6 +8,8 @@ import matplotlib.font_manager as font_manager
 from tqdm import tqdm
 import traceback
 import matplotlib
+import networkx as nx
+import numpy as np
 matplotlib.use('Agg')
 
 def load_configuration():
@@ -85,7 +87,7 @@ def plot_room(config, room_id, episode_data, receptacle_icon_mapping, save_path=
     room.cleanup()
     del room
 
-def plot_scene(config, episode_data, propositions, receptacle_icon_mapping, save_path=None):
+def plot_scene(config, episode_data, propositions, constraints, receptacle_icon_mapping, save_path=None):
     """
     Plot entire scene.
     """
@@ -102,7 +104,7 @@ def plot_scene(config, episode_data, propositions, receptacle_icon_mapping, save
         rooms.append(room)
 
     scene = Scene(config, rooms, episode_data["instruction"])
-    fig, ax = scene.plot(propositions)
+    fig, ax = scene.plot(propositions, constraints)
     width_inches = 70
     fig.set_size_inches(width_inches, (scene.height/scene.width) * width_inches)
     if save_path:
@@ -150,7 +152,7 @@ def main():
     else:
         episode_ids = sorted([int(filename.split('_')[1].split('.')[0]) for filename in os.listdir(args.episode_data_dir) if filename.startswith('episode_')])
 
-    for episode_id in tqdm(episode_ids):
+    for episode_id in tqdm([episode_ids[28]]):
         try:
             episode_data = load_episode_data(args.episode_data_dir, episode_id)
             handle_to_recep = {v:k for k, v in episode_data["recep_to_handle"].items()}
@@ -167,6 +169,8 @@ def main():
             }
 
             run_data = load_run_data(args.run_json, episode_id)
+            
+            # Handle Propositions
             propositions = run_data["evaluation_propositions"]
             for proposition in propositions:
                 proposition["args"]["object_names"] = []
@@ -181,6 +185,20 @@ def main():
                     proposition["args"]["room_names"] = []
                     for room_id in proposition["args"]["room_ids"]:
                         proposition["args"]["room_names"].append(id_to_room[room_id])
+            
+            # Handle Constraints
+            constraints = run_data["evaluation_constraints"]
+            for idx, constraint in enumerate(constraints):
+                if constraint["type"] == "TemporalConstraint":
+                    digraph = nx.DiGraph(constraint["args"]["dag_edges"])
+                    constraint["toposort"] = [sorted(generation) for generation in nx.topological_generations(digraph)]
+                elif constraint["type"] == "TerminalSatisfactionConstraint":
+                    unique_terminal_constraints = len(np.unique(constraint["args"]["proposition_indices"]))
+                    assert len(propositions) == unique_terminal_constraints
+                else:
+                    print(f"Constraint type {constraint['type']} is not handled currently. Deleting this constraint for the current visualization.")
+                    del constraints[idx]
+
             save_directory = args.save_path if args.save_path else f"visualization_{episode_id}"
             os.makedirs(save_directory, exist_ok=True)
             
@@ -191,7 +209,7 @@ def main():
             elif args.room_id:
                 plot_room(config, args.room_id, episode_data, receptacle_icon_mapping, os.path.join(save_directory, f"viz_{episode_id}.png"))
             else:
-                plot_scene(config, episode_data, propositions, receptacle_icon_mapping, os.path.join(save_directory, f"viz_{episode_id}.png"))
+                plot_scene(config, episode_data, propositions, constraints, receptacle_icon_mapping, os.path.join(save_directory, f"viz_{episode_id}.png"))
 
         except Exception:
             print(f"Episode ID: {episode_id}")

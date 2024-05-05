@@ -43,7 +43,7 @@ class Room:
             for object in self.objects:
                 object_widths += object.width
                 
-            min_width = max(min_width, object_widths * 3)
+            min_width = max(min_width, object_widths * 5)
         total_receptacle_width = max(min_width, sum(receptacle.width for receptacle in self.receptacles))
         self.room_width = total_receptacle_width + self.config.left_pad + self.config.right_pad
         self.width = self.room_width + 2 * self.config.horizontal_margin
@@ -121,7 +121,7 @@ class Room:
             for object in self.objects:
                 object_widths += object.width
                 
-            min_width = max(min_width, object_widths * 3)
+            min_width = max(min_width, object_widths * 5)
 
         # Calculate total room width including margins
         total_receptacle_width = max(

@@ -285,13 +285,13 @@ class Scene:
             matplotlib.figure.Figure, matplotlib.axes.Axes: Figure and axes of the plotted scene.
         """
         # Extract room names mentioned in propositions
-        mentioned_obs = []
+        mentioned_objs = []
         mentioned_receps = []
         mentioned_rooms = []
         if propositions:
             for prop in propositions:
                 if prop["function_name"] in ["is_on_top", "is_inside"]:
-                    mentioned_obs += prop['args']['object_names']
+                    mentioned_objs += prop['args']['object_names']
                     if prop["function_name"] == "is_on_top":
                         mentioned_receps += [("is_on_top", recep_name) for recep_name in prop['args']['receptacle_names']]
                     if prop["function_name"] == "is_inside":
@@ -307,7 +307,7 @@ class Scene:
                 room.plot_placeholder = True
 
         for room in self.rooms:
-            for obj in mentioned_obs:
+            for obj in mentioned_objs:
                 found_object = room.find_object_by_id(obj)
                 if found_object:
                     if room.room_id not in mentioned_rooms:

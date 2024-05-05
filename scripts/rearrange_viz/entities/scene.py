@@ -158,7 +158,7 @@ class Scene:
         
         return redistributed_widths
         
-    def plot_rooms_linear(self, mentioned_rooms, ax, target_width=None, height_offset=0):
+    def plot_rooms_linear(self, mentioned_rooms, ax, target_width=None, height_offset=0, all_mentioned_rooms=None):
         """
         Plots rooms linearly with names underneath.
 
@@ -226,11 +226,13 @@ class Scene:
         else:
             self.width = target_width
             all_rooms = []
+            if all_mentioned_rooms is None:
+                all_mentioned_rooms = mentioned_rooms
             for room in self.rooms:
-                if room.room_id in mentioned_rooms:
+                if room.room_id in all_mentioned_rooms:
                     all_rooms.append(room)
             for room in self.rooms:
-                if room.room_id not in mentioned_rooms:
+                if room.room_id not in all_mentioned_rooms:
                     all_rooms.append(room)
             # NOTE: This is needed to get back to original width after every call of this method
             for room in self.rooms:
@@ -288,28 +290,34 @@ class Scene:
 
             return ax, height_lower, height_upper
         
-    def plot_for_propositions(self, propositions, show_instruction=True, height_offset=0, initial_ax=None):
+    def plot_for_propositions(self, propositions, show_instruction=True, height_offset=0, initial_ax=None, all_mentioned_rooms=None):
         # Extract room names mentioned in propositions
         mentioned_objs = []
         mentioned_receps = []
         mentioned_rooms = []
-        if propositions:
-            for prop in propositions:
-                if prop["function_name"] in ["is_on_top", "is_inside"]:
-                    mentioned_objs += prop['args']['object_names']
-                    if prop["function_name"] == "is_on_top":
-                        mentioned_receps += [("is_on_top", recep_name) for recep_name in prop['args']['receptacle_names']]
-                    if prop["function_name"] == "is_inside":
-                        mentioned_receps += [("is_inside", recep_name) for recep_name in prop['args']['receptacle_names']]
-                elif prop["function_name"] == "is_in_room":
-                    mentioned_objs += prop['args']['object_names']
-                    mentioned_rooms += prop['args']['room_names']
-                else:
-                    raise NotImplementedError(f"Not implemented for function with name: {prop['function_name']}.")
+        for prop in propositions:
+            if prop["function_name"] in ["is_on_top", "is_inside"]:
+                mentioned_objs += prop['args']['object_names']
+                if prop["function_name"] == "is_on_top":
+                    mentioned_receps += [("is_on_top", recep_name) for recep_name in prop['args']['receptacle_names']]
+                if prop["function_name"] == "is_inside":
+                    mentioned_receps += [("is_inside", recep_name) for recep_name in prop['args']['receptacle_names']]
+            elif prop["function_name"] == "is_in_room":
+                mentioned_objs += prop['args']['object_names']
+                mentioned_rooms += prop['args']['room_names']
+            else:
+                raise NotImplementedError(f"Not implemented for function with name: {prop['function_name']}.")
 
         for room in self.rooms:
             if room.room_id in mentioned_rooms:
                 room.plot_placeholder = True
+            else:
+                room.plot_placeholder = False
+
+        for room in self.rooms:
+            for receptacle in room.receptacles:
+                receptacle.plot_top_placeholder = False
+                receptacle.plot_center_placeholder = False
 
         for room in self.rooms:
             for obj in mentioned_objs:
@@ -331,7 +339,9 @@ class Scene:
 
         for room in self.rooms:
             if room.room_id in mentioned_rooms:
-                room.in_proposition=True
+                room.in_proposition = True
+            else:
+                room.in_proposition = False
 
         # Create a figure and axis for plotting the scene
         if initial_ax is None:
@@ -342,7 +352,7 @@ class Scene:
         else:
             ax = initial_ax
 
-        ax, height_lower, height_upper = self.plot_rooms_linear(mentioned_rooms, ax, self.config.target_width, height_offset)
+        ax, height_lower, height_upper = self.plot_rooms_linear(mentioned_rooms, ax, self.config.target_width, height_offset, all_mentioned_rooms)
 
         # Plot lines between objects and receptacles based on propositions
         if propositions:
@@ -394,6 +404,36 @@ class Scene:
             if constraint["type"] == "TemporalConstraint":
                 toposort = constraint["toposort"]
         if toposort:
+            mentioned_objs = []
+            mentioned_receps = []
+            mentioned_rooms = []
+            for prop in propositions:
+                if prop["function_name"] in ["is_on_top", "is_inside"]:
+                    mentioned_objs += prop['args']['object_names']
+                    if prop["function_name"] == "is_on_top":
+                        mentioned_receps += [("is_on_top", recep_name) for recep_name in prop['args']['receptacle_names']]
+                    if prop["function_name"] == "is_inside":
+                        mentioned_receps += [("is_inside", recep_name) for recep_name in prop['args']['receptacle_names']]
+                elif prop["function_name"] == "is_in_room":
+                    mentioned_objs += prop['args']['object_names']
+                    mentioned_rooms += prop['args']['room_names']
+                else:
+                    raise NotImplementedError(f"Not implemented for function with name: {prop['function_name']}.")
+
+            for room in self.rooms:
+                for obj in mentioned_objs:
+                    found_object = room.find_object_by_id(obj)
+                    if found_object:
+                        if room.room_id not in mentioned_rooms:
+                            mentioned_rooms += [room.room_id]
+                for prop_function, recep in mentioned_receps: 
+                    found_receptacle = room.find_receptacle_by_id(recep)
+                    if found_receptacle:
+                        if room.room_id not in mentioned_rooms:
+                            mentioned_rooms += [room.room_id]
+
+            all_mentioned_rooms = sorted(mentioned_rooms)
+
             max_upper = 0
             min_lower = 0
             fig, ax = plt.subplots()
@@ -406,7 +446,7 @@ class Scene:
                 else:
                     show_instruction = False
                 current_propositions = [propositions[idx] for idx in current_level]
-                ax, height_lower, height_upper = self.plot_for_propositions(current_propositions, show_instruction=show_instruction, height_offset=min_lower, initial_ax=ax)
+                ax, height_lower, height_upper = self.plot_for_propositions(current_propositions, show_instruction=show_instruction, height_offset=min_lower, initial_ax=ax, all_mentioned_rooms=all_mentioned_rooms)
                 # Plot horizontal line
                 ax.axhline(y=height_lower-20, color='white', linewidth=4, linestyle='-')
 

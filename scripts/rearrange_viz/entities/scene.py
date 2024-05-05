@@ -297,7 +297,7 @@ class Scene:
                     if prop["function_name"] == "is_inside":
                         mentioned_receps += [("is_inside", recep_name) for recep_name in prop['args']['receptacle_names']]
                 elif prop["function_name"] == "is_in_room":
-                    mentioned_items += prop['args']['object_names']
+                    mentioned_objs += prop['args']['object_names']
                     mentioned_rooms += prop['args']['room_names']
                 else:
                     raise NotImplementedError(f"Not implemented for function with name: {prop['function_name']}.")

@@ -7,7 +7,7 @@ object:
   height: 50
   text_size: 30
   rounding_size: 10
-  textwrap_width: 15
+  textwrap_width: 12
 
 receptacle:
   horizontal_margin: 5

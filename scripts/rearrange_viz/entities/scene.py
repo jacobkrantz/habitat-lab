@@ -288,7 +288,7 @@ class Scene:
 
             return ax, height_lower, height_upper
         
-    def plot_for_propositions(self, propositions, show_instruction=True, height_offset=0, ax=None):
+    def plot_for_propositions(self, propositions, show_instruction=True, height_offset=0, initial_ax=None):
         # Extract room names mentioned in propositions
         mentioned_objs = []
         mentioned_receps = []
@@ -334,11 +334,13 @@ class Scene:
                 room.in_proposition=True
 
         # Create a figure and axis for plotting the scene
-        if ax is None:
+        if initial_ax is None:
             fig, ax = plt.subplots()
             background_color = "#3E4C60"
             # Set the background color of the figure
             fig.patch.set_facecolor(background_color)
+        else:
+            ax = initial_ax
 
         ax, height_lower, height_upper = self.plot_rooms_linear(mentioned_rooms, ax, self.config.target_width, height_offset)
 
@@ -370,7 +372,7 @@ class Scene:
                 
             ax.text(0.5, 1.05, self.instruction, horizontalalignment='center', verticalalignment='center', transform=ax.transAxes, fontsize=self.config.instruction_text_size)
 
-        if ax is None:
+        if initial_ax is None:
             return fig, ax, height_lower, height_upper
         else:
             return ax, height_lower, height_upper
@@ -404,7 +406,7 @@ class Scene:
                 else:
                     show_instruction = False
                 current_propositions = [propositions[idx] for idx in current_level]
-                ax, height_lower, height_upper = self.plot_for_propositions(current_propositions, show_instruction=show_instruction, height_offset=min_lower, ax=ax)
+                ax, height_lower, height_upper = self.plot_for_propositions(current_propositions, show_instruction=show_instruction, height_offset=min_lower, initial_ax=ax)
                 # Plot horizontal line
                 ax.axhline(y=height_lower-20, color='white', linewidth=4, linestyle='-')
 

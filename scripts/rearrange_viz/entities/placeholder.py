@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch
 
+
 class Placeholder:
     """
     Represents a placeholder object in a 2D space and provides methods for plotting it.
@@ -15,7 +16,7 @@ class Placeholder:
         """
         self.config = config.placeholder
         self.center_position = None
-    
+
     @property
     def width(self):
         """
@@ -25,7 +26,7 @@ class Placeholder:
             float: Width of the placeholder.
         """
         return self.config.width
-    
+
     @property
     def height(self):
         """
@@ -58,21 +59,24 @@ class Placeholder:
             created_fig = False
 
         object_rect = FancyBboxPatch(
-            (position[0], position[1]), 
-            self.width, 
-            self.height, 
-            edgecolor='white', 
-            facecolor='black', 
-            linewidth=0, 
-            linestyle='-', 
-            boxstyle=f'Round, pad=0, rounding_size={self.config.rounding_size}', 
-            alpha=1.0, 
+            (position[0], position[1]),
+            self.width,
+            self.height,
+            edgecolor="white",
+            facecolor="black",
+            linewidth=0,
+            linestyle="-",
+            boxstyle=f"Round, pad=0, rounding_size={self.config.rounding_size}",
+            alpha=1.0,
         )
 
         ax.add_patch(object_rect)
 
-        self.center_position = (position[0] + self.width / 2, position[1] + self.height / 2)  # Update center position
-        
+        self.center_position = (
+            position[0] + self.width / 2,
+            position[1] + self.height / 2,
+        )  # Update center position
+
         if created_fig:
             return fig, ax
         else:

@@ -1,8 +1,7 @@
-import os
 import matplotlib.pyplot as plt
-import matplotlib.lines as mlines
-from matplotlib.patches import FancyArrow
 import numpy as np
+from matplotlib.patches import FancyArrow
+
 
 class Scene:
     """
@@ -49,25 +48,41 @@ class Scene:
         relevance_scores = {}
 
         for room in rooms:
-            score = sum(" ".join(room.room_id.split("_")[:-1]) in keyword for keyword in keywords)
+            score = sum(
+                " ".join(room.room_id.split("_")[:-1]) in keyword
+                for keyword in keywords
+            )
 
             # Consider receptacles in the score calculation
             for receptacle in room.receptacles:
-                score += sum(" ".join(receptacle.receptacle_id.split("_")[:-1]) in keyword for keyword in keywords)
+                score += sum(
+                    " ".join(receptacle.receptacle_id.split("_")[:-1])
+                    in keyword
+                    for keyword in keywords
+                )
 
             # Consider objects in the score calculation
             if room.objects:
                 for obj in room.objects:
-                    score += sum(" ".join(obj.object_id.split("_")[:-1]) in keyword for keyword in keywords)
+                    score += sum(
+                        " ".join(obj.object_id.split("_")[:-1]) in keyword
+                        for keyword in keywords
+                    )
 
             relevance_scores[room] = score
 
         # Sort the rooms based on relevance score
-        sorted_rooms = sorted(relevance_scores.keys(), key=lambda room: relevance_scores[room], reverse=True)
+        sorted_rooms = sorted(
+            relevance_scores.keys(),
+            key=lambda room: relevance_scores[room],
+            reverse=True,
+        )
 
         return sorted_rooms
-        
-    def plot_object_to_receptacle_lines(self, object_names, receptacle_names, function_name, ax):
+
+    def plot_object_to_receptacle_lines(
+        self, object_names, receptacle_names, function_name, ax
+    ):
         """
         Plots lines between objects and receptacles based on their relations.
 
@@ -84,23 +99,39 @@ class Scene:
                     for receptacle_name in receptacle_names:
                         receptacle_objs = []
                         for r_room in self.rooms:
-                            receptacle_obj = r_room.find_receptacle_by_id(receptacle_name)
+                            receptacle_obj = r_room.find_receptacle_by_id(
+                                receptacle_name
+                            )
                             if receptacle_obj:
                                 receptacle_objs.append(receptacle_obj)
 
                         for receptacle_obj in receptacle_objs:
-                            if function_name == 'is_inside':
+                            if function_name == "is_inside":
                                 if len(object_names) > 1:
-                                    line_style = '--'  # Dotted line for multiple objects
+                                    line_style = "--"  # Dotted line for multiple objects
                                 else:
-                                    line_style = '-'  # Solid line for single object
-                                self.add_arrow(ax, object_obj.center_position, receptacle_obj.center_placeholder_position, line_style)
-                            elif function_name == 'is_on_top':
+                                    line_style = (
+                                        "-"  # Solid line for single object
+                                    )
+                                self.add_arrow(
+                                    ax,
+                                    object_obj.center_position,
+                                    receptacle_obj.center_placeholder_position,
+                                    line_style,
+                                )
+                            elif function_name == "is_on_top":
                                 if len(object_names) > 1:
-                                    line_style = '--'  # Dotted line for multiple objects
+                                    line_style = "--"  # Dotted line for multiple objects
                                 else:
-                                    line_style = '-'  # Solid line for single object
-                                self.add_arrow(ax, object_obj.center_position,  receptacle_obj.top_placeholder_position, line_style)
+                                    line_style = (
+                                        "-"  # Solid line for single object
+                                    )
+                                self.add_arrow(
+                                    ax,
+                                    object_obj.center_position,
+                                    receptacle_obj.top_placeholder_position,
+                                    line_style,
+                                )
 
     def plot_object_to_room_lines(self, object_names, room_names, ax):
         """
@@ -122,14 +153,19 @@ class Scene:
             for r_room in self.rooms:
                 if r_room.room_id == room_name:
                     target_rooms.append(r_room)
-        for object_obj in source_objects:        
+        for object_obj in source_objects:
             for room_obj in target_rooms:
                 if len(object_names) > 1:
-                    line_style = '--'  # Dotted line for multiple objects
+                    line_style = "--"  # Dotted line for multiple objects
                 else:
-                    line_style = '-'  # Solid line for single object
+                    line_style = "-"  # Solid line for single object
 
-                self.add_arrow(ax, object_obj.center_position, room_obj.center_position, line_style)
+                self.add_arrow(
+                    ax,
+                    object_obj.center_position,
+                    room_obj.center_position,
+                    line_style,
+                )
 
     def add_arrow(self, ax, obj_loc, room_loc, line_style):
         """
@@ -141,24 +177,45 @@ class Scene:
             room_loc (tuple): Location of the room.
             line_style (str): Style of the line ('-' for solid, '--' for dashed).
         """
-        arrow = FancyArrow(obj_loc[0], obj_loc[1], room_loc[0] - obj_loc[0], room_loc[1] - obj_loc[1], linestyle=line_style,
-                        head_length=self.config.arrow.head_length, head_width=self.config.arrow.head_width, width=self.config.arrow.linewidth, linewidth=self.config.arrow.linewidth,
-                        length_includes_head=True, edgecolor='white', facecolor='white', overhang=self.config.arrow.overhang)
+        arrow = FancyArrow(
+            obj_loc[0],
+            obj_loc[1],
+            room_loc[0] - obj_loc[0],
+            room_loc[1] - obj_loc[1],
+            linestyle=line_style,
+            head_length=self.config.arrow.head_length,
+            head_width=self.config.arrow.head_width,
+            width=self.config.arrow.linewidth,
+            linewidth=self.config.arrow.linewidth,
+            length_includes_head=True,
+            edgecolor="white",
+            facecolor="white",
+            overhang=self.config.arrow.overhang,
+        )
         ax.add_patch(arrow)
 
     def redistribute_target_width_to_rooms(self, rooms_to_plot, target_width):
         # Calculate total width of all rooms
         total_width = sum(room.width for room in rooms_to_plot)
-        
+
         # Calculate redistribution factor based on target width and total width
         redistribution_factor = target_width / total_width
-        
+
         # Redistribute width to each room based on their width ratios
-        redistributed_widths = [room.width * redistribution_factor for room in rooms_to_plot]
-        
+        redistributed_widths = [
+            room.width * redistribution_factor for room in rooms_to_plot
+        ]
+
         return redistributed_widths
-        
-    def plot_rooms_linear(self, mentioned_rooms, ax, target_width=None, height_offset=0, all_mentioned_rooms=None):
+
+    def plot_rooms_linear(
+        self,
+        mentioned_rooms,
+        ax,
+        target_width=None,
+        height_offset=0,
+        all_mentioned_rooms=None,
+    ):
         """
         Plots rooms linearly with names underneath.
 
@@ -181,7 +238,11 @@ class Scene:
             # Calculate total scene width based on the widths of all rooms
             self.width = first_row_position
             # Calculate scene height
-            first_row_height = max(room.height for room in self.rooms if room.room_id in mentioned_rooms)
+            first_row_height = max(
+                room.height
+                for room in self.rooms
+                if room.room_id in mentioned_rooms
+            )
 
             total_rooms = len(self.rooms)
             current_rooms_to_plot = []
@@ -189,14 +250,21 @@ class Scene:
             current_row_height = 0 + height_offset
             i = 0
             while i < total_rooms:
-                room = self.rooms[i]    
+                room = self.rooms[i]
                 if room.room_id not in mentioned_rooms:
                     if room.width + current_row_width <= self.width:
                         current_row_width += room.width
                         current_rooms_to_plot.append(room)
                     else:
-                        max_room_height_for_row = max(room.height for room in current_rooms_to_plot)
-                        rooms_have_objects = np.any([room.objects is not None and room.objects !=[] for room in current_rooms_to_plot])
+                        max_room_height_for_row = max(
+                            room.height for room in current_rooms_to_plot
+                        )
+                        rooms_have_objects = np.any(
+                            [
+                                room.objects is not None and room.objects != []
+                                for room in current_rooms_to_plot
+                            ]
+                        )
                         current_row_height -= max_room_height_for_row
                         current_row_width = 0
                         for room in current_rooms_to_plot:
@@ -204,19 +272,28 @@ class Scene:
                                 room.use_full_height = True
                             else:
                                 room.use_full_height = False
-                            ax = room.plot(position=(current_row_width, current_row_height), ax=ax)
+                            ax = room.plot(
+                                position=(
+                                    current_row_width,
+                                    current_row_height,
+                                ),
+                                ax=ax,
+                            )
                             current_row_width += room.width
                         current_row_width = 0
                         current_rooms_to_plot = []
                         continue
-                i+=1
+                i += 1
 
-            current_row_height -= max(room.height for room in current_rooms_to_plot)
+            current_row_height -= max(
+                room.height for room in current_rooms_to_plot
+            )
             current_row_width = 0
             for room in current_rooms_to_plot:
-                ax = room.plot(position=(current_row_width, current_row_height), ax=ax)
+                ax = room.plot(
+                    position=(current_row_width, current_row_height), ax=ax
+                )
                 current_row_width += room.width
-            
 
             height_upper = first_row_height
             height_lower = current_row_height
@@ -243,12 +320,17 @@ class Scene:
             current_row_height = 0 + height_offset
             i = 0
             while i < len(all_rooms):
-                room = all_rooms[i]  
+                room = all_rooms[i]
                 if room.width + current_row_width <= self.width:
                     current_row_width += room.width
                     current_rooms_to_plot.append(room)
                 else:
-                    rooms_have_objects = np.any([room.objects is not None and room.objects !=[] for room in current_rooms_to_plot])
+                    rooms_have_objects = np.any(
+                        [
+                            room.objects is not None and room.objects != []
+                            for room in current_rooms_to_plot
+                        ]
+                    )
                     for room in current_rooms_to_plot:
                         if rooms_have_objects:
                             room.use_full_height = True
@@ -256,19 +338,36 @@ class Scene:
                         else:
                             room.use_full_height = False
                             room.init_size()
-                    current_row_height -= max(room.height for room in current_rooms_to_plot)
+                    current_row_height -= max(
+                        room.height for room in current_rooms_to_plot
+                    )
                     current_row_width = 0
-                    room_target_widths = self.redistribute_target_width_to_rooms(current_rooms_to_plot, target_width)
-                    for room, room_target_width in zip(current_rooms_to_plot, room_target_widths):
-                        ax = room.plot(position=(current_row_width, current_row_height), ax=ax, target_width=room_target_width)
+                    room_target_widths = (
+                        self.redistribute_target_width_to_rooms(
+                            current_rooms_to_plot, target_width
+                        )
+                    )
+                    for room, room_target_width in zip(
+                        current_rooms_to_plot, room_target_widths
+                    ):
+                        ax = room.plot(
+                            position=(current_row_width, current_row_height),
+                            ax=ax,
+                            target_width=room_target_width,
+                        )
                         current_row_width += room.width
                     self.width = max(current_row_width, self.width)
                     current_row_width = 0
                     current_rooms_to_plot = []
                     continue
-                i+=1
+                i += 1
 
-            rooms_have_objects = np.any([room.objects is not None and room.objects !=[] for room in current_rooms_to_plot])
+            rooms_have_objects = np.any(
+                [
+                    room.objects is not None and room.objects != []
+                    for room in current_rooms_to_plot
+                ]
+            )
             for room in current_rooms_to_plot:
                 if rooms_have_objects:
                     room.use_full_height = True
@@ -276,11 +375,21 @@ class Scene:
                 else:
                     room.use_full_height = False
                     room.init_size()
-            current_row_height -= max(room.height for room in current_rooms_to_plot) 
+            current_row_height -= max(
+                room.height for room in current_rooms_to_plot
+            )
             current_row_width = 0
-            room_target_widths = self.redistribute_target_width_to_rooms(current_rooms_to_plot, target_width)
-            for room, room_target_width in zip(current_rooms_to_plot, room_target_widths):
-                ax = room.plot(position=(current_row_width, current_row_height), ax=ax, target_width=room_target_width)
+            room_target_widths = self.redistribute_target_width_to_rooms(
+                current_rooms_to_plot, target_width
+            )
+            for room, room_target_width in zip(
+                current_rooms_to_plot, room_target_widths
+            ):
+                ax = room.plot(
+                    position=(current_row_width, current_row_height),
+                    ax=ax,
+                    target_width=room_target_width,
+                )
                 current_row_width += room.width
             self.width = max(current_row_width, self.width)
 
@@ -289,24 +398,39 @@ class Scene:
             # self.height = self.height_upper - self.height_lower
 
             return ax, height_lower, height_upper
-        
-    def plot_for_propositions(self, propositions, show_instruction=True, height_offset=0, initial_ax=None, all_mentioned_rooms=None):
+
+    def plot_for_propositions(
+        self,
+        propositions,
+        show_instruction=True,
+        height_offset=0,
+        initial_ax=None,
+        all_mentioned_rooms=None,
+    ):
         # Extract room names mentioned in propositions
         mentioned_objs = []
         mentioned_receps = []
         mentioned_rooms = []
         for prop in propositions:
             if prop["function_name"] in ["is_on_top", "is_inside"]:
-                mentioned_objs += prop['args']['object_names']
+                mentioned_objs += prop["args"]["object_names"]
                 if prop["function_name"] == "is_on_top":
-                    mentioned_receps += [("is_on_top", recep_name) for recep_name in prop['args']['receptacle_names']]
+                    mentioned_receps += [
+                        ("is_on_top", recep_name)
+                        for recep_name in prop["args"]["receptacle_names"]
+                    ]
                 if prop["function_name"] == "is_inside":
-                    mentioned_receps += [("is_inside", recep_name) for recep_name in prop['args']['receptacle_names']]
+                    mentioned_receps += [
+                        ("is_inside", recep_name)
+                        for recep_name in prop["args"]["receptacle_names"]
+                    ]
             elif prop["function_name"] == "is_in_room":
-                mentioned_objs += prop['args']['object_names']
-                mentioned_rooms += prop['args']['room_names']
+                mentioned_objs += prop["args"]["object_names"]
+                mentioned_rooms += prop["args"]["room_names"]
             else:
-                raise NotImplementedError(f"Not implemented for function with name: {prop['function_name']}.")
+                raise NotImplementedError(
+                    f"Not implemented for function with name: {prop['function_name']}."
+                )
 
         for room in self.rooms:
             if room.room_id in mentioned_rooms:
@@ -325,7 +449,7 @@ class Scene:
                 if found_object:
                     if room.room_id not in mentioned_rooms:
                         mentioned_rooms += [room.room_id]
-            for prop_function, recep in mentioned_receps: 
+            for prop_function, recep in mentioned_receps:
                 found_receptacle = room.find_receptacle_by_id(recep)
                 if found_receptacle:
                     if room.room_id not in mentioned_rooms:
@@ -335,7 +459,9 @@ class Scene:
                     elif prop_function == "is_inside":
                         found_receptacle.plot_center_placeholder = True
                     else:
-                        raise NotImplementedError(f"Not implemented for prop fuction {prop_function}.")
+                        raise NotImplementedError(
+                            f"Not implemented for prop fuction {prop_function}."
+                        )
 
         for room in self.rooms:
             if room.room_id in mentioned_rooms:
@@ -352,35 +478,53 @@ class Scene:
         else:
             ax = initial_ax
 
-        ax, height_lower, height_upper = self.plot_rooms_linear(mentioned_rooms, ax, self.config.target_width, height_offset, all_mentioned_rooms)
+        ax, height_lower, height_upper = self.plot_rooms_linear(
+            mentioned_rooms,
+            ax,
+            self.config.target_width,
+            height_offset,
+            all_mentioned_rooms,
+        )
 
         # Plot lines between objects and receptacles based on propositions
         if propositions:
             for proposition in propositions:
-                function_name = proposition['function_name']
-                args = proposition['args']
-                object_names = args['object_names']
+                function_name = proposition["function_name"]
+                args = proposition["args"]
+                object_names = args["object_names"]
                 if function_name != "is_in_room":
-                    receptacle_names = args['receptacle_names']
-                    self.plot_object_to_receptacle_lines(object_names, receptacle_names, function_name, ax)
+                    receptacle_names = args["receptacle_names"]
+                    self.plot_object_to_receptacle_lines(
+                        object_names, receptacle_names, function_name, ax
+                    )
                 else:
-                    room_names = args['room_names']
-                    self.plot_object_to_room_lines(object_names, room_names, ax)
+                    room_names = args["room_names"]
+                    self.plot_object_to_room_lines(
+                        object_names, room_names, ax
+                    )
 
         # Set axis limits
         ax.set_xlim(0, self.width)
         ax.set_ylim(height_lower, height_upper)
-        
+
         # Add instruction on top
         if self.instruction and show_instruction:
             # Splitting instruction into two lines if it's too long
             if len(self.instruction) > 50:
-                instruction_lines = self.instruction.split(' ')
+                instruction_lines = self.instruction.split(" ")
                 mid_index = len(instruction_lines) // 2
-                instruction_lines.insert(mid_index, '\n')
-                self.instruction = ' '.join(instruction_lines)
-                
-            ax.text(0.5, 1.05, self.instruction, horizontalalignment='center', verticalalignment='center', transform=ax.transAxes, fontsize=self.config.instruction_text_size)
+                instruction_lines.insert(mid_index, "\n")
+                self.instruction = " ".join(instruction_lines)
+
+            ax.text(
+                0.5,
+                1.05,
+                self.instruction,
+                horizontalalignment="center",
+                verticalalignment="center",
+                transform=ax.transAxes,
+                fontsize=self.config.instruction_text_size,
+            )
 
         if initial_ax is None:
             return fig, ax, height_lower, height_upper
@@ -397,8 +541,12 @@ class Scene:
         Returns:
             matplotlib.figure.Figure, matplotlib.axes.Axes: Figure and axes of the plotted scene.
         """
-        assert constraints is not None, "All propositions should have atleast `TerminalSatisfactionConstraint`. Found no constraints instead."
-        assert propositions is not None, "Plotting without propositions is not supported."
+        assert (
+            constraints is not None
+        ), "All propositions should have atleast `TerminalSatisfactionConstraint`. Found no constraints instead."
+        assert (
+            propositions is not None
+        ), "Plotting without propositions is not supported."
         toposort = []
         for constraint in constraints:
             if constraint["type"] == "TemporalConstraint":
@@ -409,16 +557,24 @@ class Scene:
             mentioned_rooms = []
             for prop in propositions:
                 if prop["function_name"] in ["is_on_top", "is_inside"]:
-                    mentioned_objs += prop['args']['object_names']
+                    mentioned_objs += prop["args"]["object_names"]
                     if prop["function_name"] == "is_on_top":
-                        mentioned_receps += [("is_on_top", recep_name) for recep_name in prop['args']['receptacle_names']]
+                        mentioned_receps += [
+                            ("is_on_top", recep_name)
+                            for recep_name in prop["args"]["receptacle_names"]
+                        ]
                     if prop["function_name"] == "is_inside":
-                        mentioned_receps += [("is_inside", recep_name) for recep_name in prop['args']['receptacle_names']]
+                        mentioned_receps += [
+                            ("is_inside", recep_name)
+                            for recep_name in prop["args"]["receptacle_names"]
+                        ]
                 elif prop["function_name"] == "is_in_room":
-                    mentioned_objs += prop['args']['object_names']
-                    mentioned_rooms += prop['args']['room_names']
+                    mentioned_objs += prop["args"]["object_names"]
+                    mentioned_rooms += prop["args"]["room_names"]
                 else:
-                    raise NotImplementedError(f"Not implemented for function with name: {prop['function_name']}.")
+                    raise NotImplementedError(
+                        f"Not implemented for function with name: {prop['function_name']}."
+                    )
 
             for room in self.rooms:
                 for obj in mentioned_objs:
@@ -426,7 +582,7 @@ class Scene:
                     if found_object:
                         if room.room_id not in mentioned_rooms:
                             mentioned_rooms += [room.room_id]
-                for prop_function, recep in mentioned_receps: 
+                for prop_function, recep in mentioned_receps:
                     found_receptacle = room.find_receptacle_by_id(recep)
                     if found_receptacle:
                         if room.room_id not in mentioned_rooms:
@@ -445,21 +601,36 @@ class Scene:
                     show_instruction = True
                 else:
                     show_instruction = False
-                current_propositions = [propositions[idx] for idx in current_level]
-                ax, height_lower, height_upper = self.plot_for_propositions(current_propositions, show_instruction=show_instruction, height_offset=min_lower, initial_ax=ax, all_mentioned_rooms=all_mentioned_rooms)
+                current_propositions = [
+                    propositions[idx] for idx in current_level
+                ]
+                ax, height_lower, height_upper = self.plot_for_propositions(
+                    current_propositions,
+                    show_instruction=show_instruction,
+                    height_offset=min_lower,
+                    initial_ax=ax,
+                    all_mentioned_rooms=all_mentioned_rooms,
+                )
                 # Plot horizontal line
-                ax.axhline(y=height_lower-20, color='white', linewidth=4, linestyle='-')
+                ax.axhline(
+                    y=height_lower - 20,
+                    color="white",
+                    linewidth=4,
+                    linestyle="-",
+                )
 
                 max_upper = max(height_upper, max_upper)
-                min_lower = min(height_lower-40, min_lower)
+                min_lower = min(height_lower - 40, min_lower)
             self.height = max_upper - min_lower
             return fig, ax
         else:
-            fig, ax, height_lower, height_upper = self.plot_for_propositions(propositions)
+            fig, ax, height_lower, height_upper = self.plot_for_propositions(
+                propositions
+            )
             self.height = height_upper - height_lower
             return fig, ax
-        
+
 
 # TODO:
 # Think about using the initial object-receptacle mapping if needed
-# Get missing assets - shower, 
+# Get missing assets - shower,

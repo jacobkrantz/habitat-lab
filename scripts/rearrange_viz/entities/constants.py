@@ -1,43 +1,43 @@
 # Dictionary mapping category to normalized RGB tuple
 category_color_map = {
-    "sports_equipment": (1.0, 0.5, 0.0),       # Orange
-    "stationery": (0.95, 0.6, 0.1),             # Amber
-    "kitchenware": (1.0, 0.8, 0.2),             # Gold
-    "toys": (0.9, 0.4, 0.1),                    # Tangerine
-    "electronics": (0.8, 0.2, 0.0),             # Vermilion
-    "food": (0.9, 0.3, 0.2),                    # Tomato
-    "clothing": (1.0, 0.6, 0.4),                # Coral
-    "household_items": (1.0, 0.4, 0.3),         # Salmon
-    "miscellaneous": (0.95, 0.5, 0.3),          # Apricot
-    "tools": (0.85, 0.4, 0.2),                  # Burnt Sienna
-    "accessories": (0.95, 0.6, 0.5),            # Peach
-    "furniture": (0.95, 0.8, 0.7)               # Beige
+    "sports_equipment": (1.0, 0.5, 0.0),  # Orange
+    "stationery": (0.95, 0.6, 0.1),  # Amber
+    "kitchenware": (1.0, 0.8, 0.2),  # Gold
+    "toys": (0.9, 0.4, 0.1),  # Tangerine
+    "electronics": (0.8, 0.2, 0.0),  # Vermilion
+    "food": (0.9, 0.3, 0.2),  # Tomato
+    "clothing": (1.0, 0.6, 0.4),  # Coral
+    "household_items": (1.0, 0.4, 0.3),  # Salmon
+    "miscellaneous": (0.95, 0.5, 0.3),  # Apricot
+    "tools": (0.85, 0.4, 0.2),  # Burnt Sienna
+    "accessories": (0.95, 0.6, 0.5),  # Peach
+    "furniture": (0.95, 0.8, 0.7),  # Beige
 }
 
 # Dictionary mapping receptacle type to normalized RGB tuple
 receptacle_color_map = {
-    "table": (0.95, 0.8, 0.2),                  # Gold
-    "couch": (1.0, 0.6, 0.4),                   # Coral
-    "chair": (0.8, 0.5, 0.3),                   # Copper
-    "shelves": (1.0, 0.5, 0.2),                 # Tangerine
-    "stand": (0.9, 0.4, 0.1),                   # Tawny
-    "chest_of_drawers": (1.0, 0.6, 0.5),        # Peach
-    "washer_dryer": (0.9, 0.3, 0.2),            # Tomato
-    "bathtub": (0.8, 0.2, 0.0),                 # Vermilion
-    "stool": (1.0, 0.4, 0.3),                   # Salmon
-    "bench": (0.95, 0.5, 0.3),                  # Apricot
-    "cabinet": (0.85, 0.4, 0.2),                # Burnt Sienna
-    "counter": (0.95, 0.6, 0.1),                # Amber
-    "fridge": (1.0, 0.8, 0.2),                  # Gold
-    "bed": (0.95, 0.95, 0.9),                   # Ivory
-    "trashcan": (0.5, 0.5, 0.5),                # Gray
-    "microwave": (0.6, 0.8, 1.0),               # Light Blue
-    "dishwasher": (0.7, 0.7, 1.0),              # Lavender
-    "oven": (0.9, 0.3, 0.3),                    # Dark Red
-    "sink": (0.7, 0.9, 1.0),                     # Light Blue
-    "toilet": (0.7, 0.9, 1.0),                   # Light Blue (Similar to sink)
-    "wardrobe": (0.4, 0.2, 0.1),                  # Dark Brown
-    "shower": (0.6, 0.8, 1.0)                    # Light Blue (Similar to sink and microwave)
+    "table": (0.95, 0.8, 0.2),  # Gold
+    "couch": (1.0, 0.6, 0.4),  # Coral
+    "chair": (0.8, 0.5, 0.3),  # Copper
+    "shelves": (1.0, 0.5, 0.2),  # Tangerine
+    "stand": (0.9, 0.4, 0.1),  # Tawny
+    "chest_of_drawers": (1.0, 0.6, 0.5),  # Peach
+    "washer_dryer": (0.9, 0.3, 0.2),  # Tomato
+    "bathtub": (0.8, 0.2, 0.0),  # Vermilion
+    "stool": (1.0, 0.4, 0.3),  # Salmon
+    "bench": (0.95, 0.5, 0.3),  # Apricot
+    "cabinet": (0.85, 0.4, 0.2),  # Burnt Sienna
+    "counter": (0.95, 0.6, 0.1),  # Amber
+    "fridge": (1.0, 0.8, 0.2),  # Gold
+    "bed": (0.95, 0.95, 0.9),  # Ivory
+    "trashcan": (0.5, 0.5, 0.5),  # Gray
+    "microwave": (0.6, 0.8, 1.0),  # Light Blue
+    "dishwasher": (0.7, 0.7, 1.0),  # Lavender
+    "oven": (0.9, 0.3, 0.3),  # Dark Red
+    "sink": (0.7, 0.9, 1.0),  # Light Blue
+    "toilet": (0.7, 0.9, 1.0),  # Light Blue (Similar to sink)
+    "wardrobe": (0.4, 0.2, 0.1),  # Dark Brown
+    "shower": (0.6, 0.8, 1.0),  # Light Blue (Similar to sink and microwave)
 }
 
 object_category_map = {
@@ -147,7 +147,7 @@ object_category_map = {
     "toy_vehicle": "toys",
     "tray": "kitchenware",
     "vase": "household_items",
-    "watch": "accessories"
+    "watch": "accessories",
 }
 
 receptacle_properties = {
@@ -156,7 +156,11 @@ receptacle_properties = {
     "chair": {"is_on_top": True, "is_inside": False, "is_same": False},
     "shelves": {"is_on_top": True, "is_inside": True, "is_same": False},
     "stand": {"is_on_top": True, "is_inside": False, "is_same": False},
-    "chest_of_drawers": {"is_on_top": True, "is_inside": True, "is_same": False},
+    "chest_of_drawers": {
+        "is_on_top": True,
+        "is_inside": True,
+        "is_same": False,
+    },
     "wardrobe": {"is_on_top": True, "is_inside": True, "is_same": False},
     "washer_dryer": {"is_on_top": True, "is_inside": True, "is_same": False},
     "bathtub": {"is_on_top": True, "is_inside": True, "is_same": True},
@@ -172,6 +176,5 @@ receptacle_properties = {
     "oven": {"is_on_top": True, "is_inside": False, "is_same": False},
     "sink": {"is_on_top": True, "is_inside": True, "is_same": True},
     "toilet": {"is_on_top": True, "is_inside": True, "is_same": False},
-    "wardrobe": {"is_on_top": True, "is_inside": True, "is_same": False},
     "shower": {"is_on_top": True, "is_inside": False, "is_same": False},
 }

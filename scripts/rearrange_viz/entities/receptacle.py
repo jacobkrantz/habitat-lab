@@ -1,9 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
-from .constants import receptacle_properties, receptacle_color_map
+
+from .constants import receptacle_color_map, receptacle_properties
 from .placeholder import Placeholder
 from .utils import add_tint_to_rgb
+
 
 class Receptacle:
     """
@@ -64,7 +66,7 @@ class Receptacle:
         icon = Image.open(self.icon_path)
         icon = self.resize_icon(icon)
         icon_width, icon_height = icon.size
-        self.width = (icon_width + 2 * self.horizontal_margin)
+        self.width = icon_width + 2 * self.horizontal_margin
         self.height = icon_height
 
     def calculate_placeholder_heights(self, image):
@@ -79,12 +81,12 @@ class Receptacle:
         - top_height: Height of the non-empty part of the image from the top
         """
         alpha = np.array(image)[:, :, 3]
-        bottom = alpha.shape[0]+1
+        bottom = alpha.shape[0] + 1
         top = 0
         for idx, row in enumerate(alpha):
             row_sum = np.sum(row)
             if row_sum != 0:
-                top = idx+1
+                top = idx + 1
                 break
         top_height = bottom - top
         center_height = top_height / 2
@@ -113,42 +115,62 @@ class Receptacle:
 
         icon = Image.open(self.icon_path)
         icon = self.resize_icon(icon)
-        color = receptacle_color_map['_'.join(self.receptacle_id.split('_')[:-1])]
+        color = receptacle_color_map[
+            "_".join(self.receptacle_id.split("_")[:-1])
+        ]
         color = tuple(int(255 * i) for i in color)
         icon = add_tint_to_rgb(icon, tint_color=color)
         receptacle_width, receptacle_height = icon.size
-        ax.imshow(icon, 
+        ax.imshow(
+            icon,
             extent=(
                 (position[0] + self.horizontal_margin),
-                (position[0] + receptacle_width + self.horizontal_margin), 
-                position[1], 
-                (position[1] + receptacle_height)
-            )
+                (position[0] + receptacle_width + self.horizontal_margin),
+                position[1],
+                (position[1] + receptacle_height),
+            ),
         )
 
         center_height, top_height = self.calculate_placeholder_heights(icon)
-        self.center_placeholder_position = (position[0] + self.width / 2, position[1] + center_height)
-        self.top_placeholder_position = (position[0] + self.width / 2, position[1] + top_height + self.config.placeholder_margin)
+        self.center_placeholder_position = (
+            position[0] + self.width / 2,
+            position[1] + center_height,
+        )
+        self.top_placeholder_position = (
+            position[0] + self.width / 2,
+            position[1] + top_height + self.config.placeholder_margin,
+        )
 
-        properties = receptacle_properties['_'.join(self.receptacle_id.split('_')[:-1])]
+        properties = receptacle_properties[
+            "_".join(self.receptacle_id.split("_")[:-1])
+        ]
         # TODO: See how to handle `is_same`
         if self.plot_top_placeholder and properties["is_same"]:
             self.plot_center_placeholder = True
             self.plot_top_placeholder = False
         if self.plot_top_placeholder and properties["is_on_top"]:
             self.top_placeholder = Placeholder(self.config)
-            top_placeholder_origin = (self.top_placeholder_position[0] - self.config.placeholder.width/2, self.top_placeholder_position[1] - self.config.placeholder.height/2 )
+            top_placeholder_origin = (
+                self.top_placeholder_position[0]
+                - self.config.placeholder.width / 2,
+                self.top_placeholder_position[1]
+                - self.config.placeholder.height / 2,
+            )
             ax = self.top_placeholder.plot(ax, top_placeholder_origin)
-            
+
         if self.plot_center_placeholder and properties["is_inside"]:
             self.center_placeholder = Placeholder(self.config)
-            center_placeholder_origin = (self.center_placeholder_position[0] - self.config.placeholder.width/2, self.center_placeholder_position[1] - self.config.placeholder.height/2 )
+            center_placeholder_origin = (
+                self.center_placeholder_position[0]
+                - self.config.placeholder.width / 2,
+                self.center_placeholder_position[1]
+                - self.config.placeholder.height / 2,
+            )
             ax = self.center_placeholder.plot(ax, center_placeholder_origin)
 
-        ax.axis('off')
+        ax.axis("off")
 
         if created_fig:
             return fig, ax
         else:
             return ax
-    

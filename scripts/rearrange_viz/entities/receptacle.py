@@ -24,7 +24,8 @@ class Receptacle:
         self.icon_path = icon_path
         self.center_placeholder_position = None  # Initialize center position
         self.top_placeholder_position = None  # Initialize top position
-        self.plot_placeholder = False
+        self.plot_top_placeholder = False
+        self.plot_center_placeholder = False
         self.init_size()
 
     @property
@@ -129,17 +130,20 @@ class Receptacle:
         self.center_placeholder_position = (position[0] + self.width / 2, position[1] + center_height)
         self.top_placeholder_position = (position[0] + self.width / 2, position[1] + top_height + self.config.placeholder_margin)
 
-        if self.plot_placeholder:
-            properties = receptacle_properties['_'.join(self.receptacle_id.split('_')[:-1])]
-            if properties["is_on_top"]:
-                self.top_placeholder = Placeholder(self.config)
-                top_placeholder_origin = (self.top_placeholder_position[0] - self.config.placeholder.width/2, self.top_placeholder_position[1] - self.config.placeholder.height/2 )
-                ax = self.top_placeholder.plot(ax, top_placeholder_origin)
-                
-            if properties["is_inside"]:
-                self.center_placeholder = Placeholder(self.config)
-                center_placeholder_origin = (self.center_placeholder_position[0] - self.config.placeholder.width/2, self.center_placeholder_position[1] - self.config.placeholder.height/2 )
-                ax = self.center_placeholder.plot(ax, center_placeholder_origin)
+        properties = receptacle_properties['_'.join(self.receptacle_id.split('_')[:-1])]
+        # TODO: See how to handle `is_same`
+        if self.plot_top_placeholder and properties["is_same"]:
+            self.plot_center_placeholder = True
+            self.plot_top_placeholder = False
+        if self.plot_top_placeholder and properties["is_on_top"]:
+            self.top_placeholder = Placeholder(self.config)
+            top_placeholder_origin = (self.top_placeholder_position[0] - self.config.placeholder.width/2, self.top_placeholder_position[1] - self.config.placeholder.height/2 )
+            ax = self.top_placeholder.plot(ax, top_placeholder_origin)
+            
+        if self.plot_center_placeholder and properties["is_inside"]:
+            self.center_placeholder = Placeholder(self.config)
+            center_placeholder_origin = (self.center_placeholder_position[0] - self.config.placeholder.width/2, self.center_placeholder_position[1] - self.config.placeholder.height/2 )
+            ax = self.center_placeholder.plot(ax, center_placeholder_origin)
 
         ax.axis('off')
 

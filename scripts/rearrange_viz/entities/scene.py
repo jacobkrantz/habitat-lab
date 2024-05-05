@@ -285,13 +285,17 @@ class Scene:
             matplotlib.figure.Figure, matplotlib.axes.Axes: Figure and axes of the plotted scene.
         """
         # Extract room names mentioned in propositions
-        mentioned_items = []
+        mentioned_obs = []
+        mentioned_receps = []
         mentioned_rooms = []
         if propositions:
             for prop in propositions:
                 if prop["function_name"] in ["is_on_top", "is_inside"]:
-                    mentioned_items += prop['args']['object_names']
-                    mentioned_items += prop['args']['receptacle_names']
+                    mentioned_obs += prop['args']['object_names']
+                    if prop["function_name"] == "is_on_top":
+                        mentioned_receps += [("is_on_top", recep_name) for recep_name in prop['args']['receptacle_names']]
+                    if prop["function_name"] == "is_inside":
+                        mentioned_receps += [("is_inside", recep_name) for recep_name in prop['args']['receptacle_names']]
                 elif prop["function_name"] == "is_in_room":
                     mentioned_items += prop['args']['object_names']
                     mentioned_rooms += prop['args']['room_names']
@@ -303,14 +307,22 @@ class Scene:
                 room.plot_placeholder = True
 
         for room in self.rooms:
-            for item in mentioned_items:
-                found_receptacle = room.find_receptacle_by_id(item)
-                found_object = room.find_object_by_id(item)
-                if found_receptacle or found_object:
+            for obj in mentioned_obs:
+                found_object = room.find_object_by_id(obj)
+                if found_object:
                     if room.room_id not in mentioned_rooms:
                         mentioned_rooms += [room.room_id]
+            for prop_function, recep in mentioned_receps: 
+                found_receptacle = room.find_receptacle_by_id(recep)
                 if found_receptacle:
-                    found_receptacle.plot_placeholder = True
+                    if room.room_id not in mentioned_rooms:
+                        mentioned_rooms += [room.room_id]
+                    if prop_function == "is_on_top":
+                        found_receptacle.plot_top_placeholder = True
+                    elif prop_function == "is_inside":
+                        found_receptacle.plot_center_placeholder = True
+                    else:
+                        raise NotImplementedError(f"Not implemented for prop fuction {prop_function}.")
 
         for room in self.rooms:
             if room.room_id in mentioned_rooms:

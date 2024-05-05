@@ -152,7 +152,7 @@ def main():
     else:
         episode_ids = sorted([int(filename.split('_')[1].split('.')[0]) for filename in os.listdir(args.episode_data_dir) if filename.startswith('episode_')])
 
-    for episode_id in tqdm([episode_ids[28]]):
+    for episode_id in tqdm(episode_ids):
         try:
             episode_data = load_episode_data(args.episode_data_dir, episode_id)
             handle_to_recep = {v:k for k, v in episode_data["recep_to_handle"].items()}

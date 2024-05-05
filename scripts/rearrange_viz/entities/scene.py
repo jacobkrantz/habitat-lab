@@ -406,7 +406,7 @@ class Scene:
                 current_propositions = [propositions[idx] for idx in current_level]
                 ax, height_lower, height_upper = self.plot_for_propositions(current_propositions, show_instruction=show_instruction, height_offset=min_lower, ax=ax)
                 # Plot horizontal line
-                ax.axhline(y=height_lower-20, color='r', linewidth=4, linestyle='-')
+                ax.axhline(y=height_lower-20, color='white', linewidth=4, linestyle='-')
 
                 max_upper = max(height_upper, max_upper)
                 min_lower = min(height_lower-40, min_lower)

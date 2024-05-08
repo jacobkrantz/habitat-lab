@@ -36,17 +36,16 @@ def add_tint_to_rgb(image, tint_color):
 
 def wrap_text(text, max_chars_per_line):
     # Split names with `_` and remove digits
-    names = [re.sub(r'\d', '', name.replace('\\', '\n')) for name in text.split('_')]
-    wrapped_names = []
-
-    # Wrap names into multiple lines if length is bigger than max_chars_per_line
+    text = text.replace("/", "_")
+    names = [re.sub(r'\d', '', name) for name in text.split('_')]
+    current_line = ""
+    wrapped_text = []
     for name in names:
-        if len(name) > max_chars_per_line:
-            # Split words into multiple lines
-            wrapped_name = textwrap.fill(name, width=max_chars_per_line)
-            wrapped_names.extend(wrapped_name.split('\n'))
+        if len(current_line + name) <= max_chars_per_line:
+            current_line += name + " "
         else:
-            wrapped_names.append(name)
-
-    wrapped_text = '\n'.join(wrapped_names)
+            wrapped_text.append(current_line.strip())
+            current_line = name + " "
+    wrapped_text.append(current_line.strip())
+    wrapped_text = "\n".join(wrapped_text).strip()
     return wrapped_text

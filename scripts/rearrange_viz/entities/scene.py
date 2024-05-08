@@ -409,6 +409,7 @@ class Scene:
     ):
         # Extract room names mentioned in propositions
         mentioned_objs = []
+        on_floor_objs = []
         mentioned_receps = []
         mentioned_rooms = []
         for prop in propositions:
@@ -427,6 +428,8 @@ class Scene:
             elif prop["function_name"] == "is_in_room":
                 mentioned_objs += prop["args"]["object_names"]
                 mentioned_rooms += prop["args"]["room_names"]
+            elif prop["function_name"] == "is_on_floor":
+                on_floor_objs += prop["args"]["object_names"]
             else:
                 raise NotImplementedError(
                     f"Not implemented for function with name: {prop['function_name']}."
@@ -442,8 +445,17 @@ class Scene:
             for receptacle in room.receptacles:
                 receptacle.plot_top_placeholder = False
                 receptacle.plot_center_placeholder = False
+            for obj in room.objects:
+                obj.is_on_floor = False
 
         for room in self.rooms:
+            for obj in on_floor_objs:
+                found_object = room.find_object_by_id(obj)
+                if found_object:
+                    found_object.is_on_floor = True
+                    if room.room_id not in mentioned_rooms:
+                        mentioned_rooms += [room.room_id]
+
             for obj in mentioned_objs:
                 found_object = room.find_object_by_id(obj)
                 if found_object:
@@ -492,16 +504,18 @@ class Scene:
                 function_name = proposition["function_name"]
                 args = proposition["args"]
                 object_names = args["object_names"]
-                if function_name != "is_in_room":
+                if function_name in ["is_inside", "is_on_top"]:
                     receptacle_names = args["receptacle_names"]
                     self.plot_object_to_receptacle_lines(
                         object_names, receptacle_names, function_name, ax
                     )
-                else:
+                elif function_name == "is_in_room":
                     room_names = args["room_names"]
                     self.plot_object_to_room_lines(
                         object_names, room_names, ax
                     )
+                # else:
+                #     raise NotImplementedError(f"Not implemented line plotting for {function_name}.")
 
         # Set axis limits
         ax.set_xlim(0, self.width)
@@ -519,7 +533,7 @@ class Scene:
             ax.text(
                 0.5,
                 1.05,
-                self.instruction,
+                ''.join(filter(lambda x: not x.isdigit(), self.instruction)),
                 horizontalalignment="center",
                 verticalalignment="center",
                 transform=ax.transAxes,
@@ -552,6 +566,9 @@ class Scene:
             if constraint["type"] == "TemporalConstraint":
                 toposort = constraint["toposort"]
         if toposort:
+            
+            # NOTE: All the next bits are only used to get a list of all the mentioned rooms to keep them in front!
+            # We don't really care about using mentioned objects and receptacles after
             mentioned_objs = []
             mentioned_receps = []
             mentioned_rooms = []
@@ -571,6 +588,8 @@ class Scene:
                 elif prop["function_name"] == "is_in_room":
                     mentioned_objs += prop["args"]["object_names"]
                     mentioned_rooms += prop["args"]["room_names"]
+                elif prop["function_name"] == "is_on_floor":
+                    mentioned_objs += prop["args"]["object_names"]
                 else:
                     raise NotImplementedError(
                         f"Not implemented for function with name: {prop['function_name']}."

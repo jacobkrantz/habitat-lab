@@ -3,6 +3,7 @@ import textwrap
 import matplotlib.pyplot as plt
 
 from .placeholder import Placeholder
+from .utils import wrap_text
 
 
 class Room:
@@ -192,8 +193,7 @@ class Room:
             new_position[1] + self.config.bottom_pad / 4
         )  # Offset for lower v_pad region
 
-        # Wrap the text if it's longer than a certain length
-        wrapped_text = textwrap.fill(self.room_id, width=self.config.textwrap_width)
+        wrapped_text = wrap_text(self.room_id, self.config.max_chars_per_line)
 
         ax.annotate(
             wrapped_text,

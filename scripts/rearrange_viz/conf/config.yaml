@@ -7,7 +7,10 @@ object:
   height: 50
   text_size: 30
   rounding_size: 10
-  textwrap_width: 12
+  max_chars_per_line: 12
+  on_floor_linewidth: 5
+  on_floor_line_length_ratio: 0.6
+  on_floor_line_margin_ratio: 1.2
 
 receptacle:
   horizontal_margin: 5
@@ -37,7 +40,7 @@ room:
   object_horizontal_margin_fraction: 0.05 # Fraction on each side to skip
   text_size: 30
   border_width: 10
-  textwrap_width: 15
+  max_chars_per_line: 15
 
 scene:
   arrow:

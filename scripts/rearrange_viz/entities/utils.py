@@ -1,3 +1,5 @@
+import re
+import textwrap
 from PIL import Image, ImageChops
 
 
@@ -31,3 +33,20 @@ def add_tint_to_rgb(image, tint_color):
             alpha,
         ),
     )
+
+def wrap_text(text, max_chars_per_line):
+    # Split names with `_` and remove digits
+    names = [re.sub(r'\d', '', name.replace('\\', '\n')) for name in text.split('_')]
+    wrapped_names = []
+
+    # Wrap names into multiple lines if length is bigger than max_chars_per_line
+    for name in names:
+        if len(name) > max_chars_per_line:
+            # Split words into multiple lines
+            wrapped_name = textwrap.fill(name, width=max_chars_per_line)
+            wrapped_names.extend(wrapped_name.split('\n'))
+        else:
+            wrapped_names.append(name)
+
+    wrapped_text = '\n'.join(wrapped_names)
+    return wrapped_text

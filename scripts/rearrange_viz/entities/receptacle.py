@@ -84,7 +84,8 @@ class Receptacle:
         bottom = alpha.shape[0] + 1
         top = 0
         for idx, row in enumerate(alpha):
-            row_sum = np.sum(row)
+            middle_idx = row.shape[0]//2
+            row_sum = np.sum(row[middle_idx])
             if row_sum != 0:
                 top = idx + 1
                 break

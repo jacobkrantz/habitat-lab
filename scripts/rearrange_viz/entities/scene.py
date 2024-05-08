@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import FancyArrow
-
+from .utils import wrap_text
 
 class Scene:
     """
@@ -523,17 +523,12 @@ class Scene:
 
         # Add instruction on top
         if self.instruction and show_instruction:
-            # Splitting instruction into two lines if it's too long
-            if len(self.instruction) > 50:
-                instruction_lines = self.instruction.split(" ")
-                mid_index = len(instruction_lines) // 2
-                instruction_lines.insert(mid_index, "\n")
-                self.instruction = " ".join(instruction_lines)
+            wrapped_text = wrap_text(self.instruction, self.config.max_chars_per_line)
 
             ax.text(
                 0.5,
                 1.05,
-                ''.join(filter(lambda x: not x.isdigit(), self.instruction)),
+                ''.join(filter(lambda x: not x.isdigit(), wrapped_text)),
                 horizontalalignment="center",
                 verticalalignment="center",
                 transform=ax.transAxes,

@@ -255,7 +255,7 @@ class Room:
 
         self.center_position = (
             new_position[0] + self.room_width / 2,
-            new_position[1] + self.config.placeholder_height,
+            new_position[1] + self.config.placeholder_height * (self.config.objects_height if self.use_full_height else self.config.half_height),
         )
 
         if not self.in_proposition:

@@ -35,7 +35,7 @@ room:
   right_pad: 50
   full_height: 800
   half_height: 500
-  placeholder_height: 450
+  placeholder_height: 0.8 # fraction of objects height if using room full height else half height
   objects_height: 700
   min_width: 200
   object_horizontal_margin_fraction: 0.05 # Fraction on each side to skip

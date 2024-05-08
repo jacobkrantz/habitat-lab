@@ -286,7 +286,8 @@ def main():
                     unique_terminal_constraints = len(
                         np.unique(constraint["args"]["proposition_indices"])
                     )
-                    assert len(propositions) == unique_terminal_constraints
+                    if len(propositions) != unique_terminal_constraints:
+                        print(f"For episodie_id:{episode_id}, len of propositions: {len(propositions)} and unique terminal constraints {unique_terminal_constraints}")
                 else:
                     print(
                         f"Constraint type {constraint['type']} is not handled currently. Deleting this constraint for the current visualization."

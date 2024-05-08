@@ -152,13 +152,12 @@ class Room:
             min_width = max(min_width, object_widths * 5)
 
         # Calculate total room width including margins
-        total_receptacle_width = max(
+        minimum_room_width = max(
             min_width, sum(receptacle.width for receptacle in self.receptacles)
         )
 
-        # Need to calculate room width AFTER plotting
         self.room_width = (
-            total_receptacle_width
+            minimum_room_width
             + self.config.left_pad
             + self.config.right_pad
         )
@@ -178,12 +177,17 @@ class Room:
         self.room_width = self.room_width + 2 * extra_horizontal_pad
 
         # Calculate initial offset considering left margin and horizontal padding
-        offset = new_position[0] + self.config.left_pad + extra_horizontal_pad
+        
+        new_receptacle_width = sum(recep.width for recep in self.receptacles)
+        num_receptacles = len(self.receptacles)
+        spacing = (minimum_room_width - new_receptacle_width) / (num_receptacles + 1)
+        
+        offset = new_position[0] + self.config.left_pad + extra_horizontal_pad + spacing
         for receptacle in self.receptacles:
             ax = receptacle.plot(
                 ax, position=(offset, new_position[1] + self.config.bottom_pad)
             )
-            offset += receptacle.width
+            offset += receptacle.width + spacing
 
         self.width = self.room_width + 2 * self.config.horizontal_margin
 
@@ -195,6 +199,7 @@ class Room:
 
         wrapped_text = wrap_text(self.room_id, self.config.max_chars_per_line)
 
+        text_y = new_position[1] + self.config.bottom_pad/4 * 1/(wrapped_text.count('\n') + 1)    
         ax.annotate(
             wrapped_text,
             xy=(text_x, text_y),

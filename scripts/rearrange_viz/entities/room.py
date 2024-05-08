@@ -193,7 +193,7 @@ class Room:
         )  # Offset for lower v_pad region
 
         # Wrap the text if it's longer than a certain length
-        wrapped_text = textwrap.fill(self.room_id, width=15)
+        wrapped_text = textwrap.fill(self.room_id, width=self.config.textwrap_width)
 
         ax.annotate(
             wrapped_text,

@@ -2,7 +2,7 @@ defaults:
   - object: default
 
 object:
-  text_margin: 140
+  text_margin: 120
   width: 70
   height: 70
   text_size: 15

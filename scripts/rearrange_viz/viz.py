@@ -150,7 +150,7 @@ def plot_scene(
 
     scene = Scene(config, rooms, episode_data["instruction"])
     fig, ax = scene.plot(propositions, constraints)
-    width_inches = 70
+    width_inches = config.width_inches
     fig.set_size_inches(
         width_inches, (scene.height / scene.width) * width_inches
     )

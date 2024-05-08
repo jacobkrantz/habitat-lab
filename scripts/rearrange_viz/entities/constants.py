@@ -38,6 +38,7 @@ receptacle_color_map = {
     "toilet": (0.7, 0.9, 1.0),  # Light Blue (Similar to sink)
     "wardrobe": (0.4, 0.2, 0.1),  # Dark Brown
     "shower": (0.6, 0.8, 1.0),  # Light Blue (Similar to sink and microwave)
+    "filing_cabinet": (0.85, 0.4, 0.2),  # Burnt Sienna
 }
 
 object_category_map = {

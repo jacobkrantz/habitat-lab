@@ -12,6 +12,9 @@ from entities import Object, Receptacle, Room, Scene
 from omegaconf import OmegaConf
 from tqdm import tqdm
 
+from google_drive_utils import load_credentials, create_drive_folder, upload_image_to_drive, add_image_to_sheet, get_google_sheet
+from googleapiclient.discovery import build
+
 matplotlib.use("Agg")
 
 
@@ -152,7 +155,7 @@ def plot_scene(
         width_inches, (scene.height / scene.width) * width_inches
     )
     if save_path:
-        plt.savefig(save_path, dpi=300)
+        plt.savefig(save_path, dpi=400)
     else:
         plt.show()
     fig.clear()
@@ -185,8 +188,9 @@ def parse_arguments():
     parser.add_argument(
         "--save-path", type=str, help="Directory to save the figures"
     )
+    parser.add_argument('--google-creds', type=str, help='Path to Google Drive credentials JSON file')
+    parser.add_argument('--google-sheets-name', type=str, help='Name of Google Sheets document', default='Visualization-Rearrangement')
     return parser.parse_args()
-
 
 def main():
     """
@@ -194,6 +198,7 @@ def main():
     """
     args = parse_arguments()
     config = load_configuration()
+    sheet_id = None
 
     current_dir = os.path.dirname(__file__)
     font_dirs = [os.path.join(current_dir, "fonts")]
@@ -325,6 +330,26 @@ def main():
                     receptacle_icon_mapping,
                     os.path.join(save_directory, f"viz_{episode_id}.png"),
                 )
+
+            if args.google_creds:
+                # Load credentials for Drive
+                scopes = ["https://www.googleapis.com/auth/drive"]
+                drive_creds = load_credentials(args.google_creds, scopes)
+                drive_service = build("drive", "v3", credentials=drive_creds)
+                folder_id = create_drive_folder(drive_service, "Viz-Rearrangement")
+
+                # Upload image to Google Drive and get the file ID
+                image_path = os.path.join(save_directory, f"viz_{episode_id}.png")
+                image_id, image_url = upload_image_to_drive(drive_service, folder_id, image_path)
+                drive_service.permissions().create(fileId=image_id, body={'role': 'reader', 'type': 'anyone'}).execute()
+                
+            if args.google_creds and args.google_sheets_name:
+                scopes = ["https://www.googleapis.com/auth/drive", "https://www.googleapis.com/auth/spreadsheets"]
+                creds = load_credentials(args.google_creds, scopes)
+                sheets_service = build("sheets", "v4", credentials=creds)
+                sheet_id = get_google_sheet(sheets_service, args.google_sheets_name, sheet_id)
+                res = add_image_to_sheet(sheets_service, sheet_id, episode_id, image_id)
+
 
         except Exception:
             print(f"Episode ID: {episode_id}")

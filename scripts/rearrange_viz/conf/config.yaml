@@ -34,7 +34,8 @@ room:
   left_pad: 50
   right_pad: 50
   full_height: 800
-  half_height: 400
+  half_height: 500
+  placeholder_height: 450
   objects_height: 700
   min_width: 200
   object_horizontal_margin_fraction: 0.05 # Fraction on each side to skip
@@ -50,5 +51,6 @@ scene:
     overhang: 0.9
   target_width: 4000
   instruction_text_size: 25
+  max_chars_per_line: 100
 
 width_inches: 20

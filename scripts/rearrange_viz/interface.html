@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Annotation</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+    <style>
+        body,
+        html {
+            height: 100%;
+            background-color: #3E4C60;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .box {
+            width: 100%;
+            height: 100vh;
+            /* Adjusted height */
+            background-color: #3E4C60;
+            color: white;
+            padding: 20px;
+            box-shadow: none;
+            overflow: auto;
+            /* Added */
+        }
+
+        .image-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .image {
+            max-width: 100%;
+        }
+
+        .input.remarks {
+            font-size: 1vw;
+            color: white;
+            width: 80%;
+            background-color: #2F3743;
+            margin: 0 auto;
+            border-width: 0px;
+        }
+
+        .button-container {
+            text-align: center;
+            margin-top: 0.5vh;
+        }
+
+        .button,
+        .button.is-large {
+            font-size: 1.5vw;
+            color: white;
+        }
+
+        input[type="radio"] {
+            display: none;
+        }
+
+        .label {
+            color: white;
+        }
+
+        .label.radio {
+            color: #2F3743;
+            background-color: white;
+            display: inline-block;
+            padding: 0.25vw 1vw;
+            /* Adjust padding to fit the text */
+            margin: 0.25vw;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.25vw;
+            width: 15vw;
+            /* Fixed width for both buttons */
+            text-align: center;
+            /* Center the text within the button */
+        }
+
+        #goToEpisodeBtn {
+            color: #2F3743;
+            background-color: white;
+            display: inline-block;
+            padding: 0vw 0vw;
+            /* Adjust padding to fit the text */
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1vw;
+            width: 15vw;
+            /* Fixed width for both buttons */
+            text-align: center;
+            /* Center the text within the button */
+        }
+
+        input[type="radio"]:checked+.label.radio {
+            background-color: #81f7ff;
+            color: #2F3743;
+        }
+
+        .label.radio:hover {
+            background-color: #4a90e2;
+            color: #2F3743;
+        }
+
+        #episodeInput {
+            font-size: 1vw;
+            color: white;
+            width: 20%;
+            background-color: #2F3743;
+            margin: 0 auto;
+            border-width: 0px;
+        }
+
+        .control {
+            text-align: center;
+        }
+
+        .nav-text,
+        .pipe {
+            font-size: 1.5vw;
+            cursor: pointer;
+        }
+
+        .nav-text:hover {
+            color: #3273dc;
+        }
+
+        .pipe {
+            margin: 0 0.5vw;
+        }
+
+        .label.remarks-label,
+        .label.task-correctness-label,
+        .label.eval-correctness-label {
+            font-size: 1vw;
+            color: white;
+        }
+
+        #prevBtn,
+        #nextBtn,
+        #saveBtn {
+            font-size: 1vw;
+        }
+
+        .episode-info {
+            color: white;
+            text-align: center;
+        }
+
+        .scroll-message {
+            color: white;
+            font-size: 1vw;
+            text-align: center;
+            margin-top: 1vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="box">
+        <div class="button-container columns is-mobile">
+            <div class="column is-half is-offset-one-quarter">
+                <button id="goToEpisodeBtn" class="button">Go</button>
+                <input type="number" id="episodeInput" class="input" placeholder="Episode Number">
+            </div>
+        </div>
+        <p id="episodeInfo" class="episode-info"></p>
+        <div class="image-container">
+            <!-- <p id="scrollMessage" class="scroll-message">Scroll down to view the entire image</p> -->
+            <img id="currentImage" src="" alt="Image" class="image">
+        </div>
+        <div class="field">
+            <div class="control">
+                <label class="label remarks-label">Remarks:</label>
+                <input type="text" id="remarks" class="input remarks">
+            </div>
+        </div>
+        <div class="field">
+            <div class="control">
+                <label class="label task-correctness-label">Task:</label>
+                <label class="radio">
+                    <input type="radio" name="task_correctness" value="no">
+                    <span class="label radio">Incorrect</span>
+                </label>
+                <label class="radio">
+                    <input type="radio" name="task_correctness" value="yes">
+                    <span class="label radio">Correct</span>
+                </label>
+            </div>
+        </div>
+        <div class="field">
+            <div class="control">
+                <label class="label eval-correctness-label">Evaluation Function:</label>
+                <label class="radio">
+                    <input type="radio" name="eval_correctness" value="no">
+                    <span class="label radio">Incorrect</span>
+                </label>
+                <label class="radio">
+                    <input type="radio" name="eval_correctness" value="yes">
+                    <span class="label radio">Correct</span>
+                </label>
+            </div>
+        </div>
+        <div class="button-container columns is-mobile">
+            <div class="column is-half is-offset-one-quarter">
+                <span id="prevBtn" class="nav-text">
+                    < Prev</span>
+                        <span class="pipe">|</span>
+                        <span id="saveBtn" class="nav-text">Save</span>
+                        <span class="pipe">|</span>
+                        <span id="nextBtn" class="nav-text">Next ></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let images = [];
+        for (let i = 0; i <= NUMBER_OF_IMAGES_IN_SAMPLE; i++) {
+            images.push(`assets/viz_${i}.png`);
+        }
+        let imageData = [];
+        let currentIndex = 0;
+
+        function updateEpisodeInfo(index) {
+            document.getElementById("episodeInfo").textContent = `Episode ${index + 1} out of ${images.length}`;
+        }
+
+        function loadImage(index) {
+            document.getElementById("currentImage").src = images[index];
+            currentIndex = index;
+            updateInputFields(currentIndex);
+            updateEpisodeInfo(index);
+        }
+
+        function goToEpisode() {
+            let episodeInput = document.getElementById("episodeInput").value;
+            if (episodeInput !== "") {
+                let episodeNumber = parseInt(episodeInput);
+                if (!isNaN(episodeNumber) && episodeNumber >= 1 && episodeNumber <= images.length) {
+                    saveData(currentIndex);
+                    loadImage(episodeNumber - 1);
+                    currentIndex = episodeNumber - 1; // Update current index
+                    document.querySelector('.box').scrollTop = 0; // Scroll to the top
+                } else {
+                    alert("Invalid episode number. Please enter a number between 1 and " + images.length);
+                }
+            } else {
+                alert("Please enter an episode number.");
+            }
+        }
+        function updateInputFields(index) {
+            let data = imageData[index];
+            if (data) {
+                document.getElementById("remarks").value = data.remarks || "";
+                let taskCorrectnessValue = data.task_correctness || "";
+                let taskRadioButtons = document.querySelectorAll('input[name="task_correctness"]');
+                taskRadioButtons.forEach(button => {
+                    if (button.value === taskCorrectnessValue) {
+                        button.checked = true;
+                    } else {
+                        button.checked = false;
+                    }
+                });
+                let evalCorrectnessValue = data.eval_correctness || "";
+                let evalRadioButtons = document.querySelectorAll('input[name="eval_correctness"]');
+                evalRadioButtons.forEach(button => {
+                    if (button.value === evalCorrectnessValue) {
+                        button.checked = true;
+                    } else {
+                        button.checked = false;
+                    }
+                });
+
+            } else {
+                document.getElementById("remarks").value = "";
+                let taskRadioButtons = document.querySelectorAll('input[name="task_correctness"]');
+                taskRadioButtons.forEach(button => {
+                    button.checked = false;
+                });
+                let evalRadioButtons = document.querySelectorAll('input[name="eval_correctness"]');
+                evalRadioButtons.forEach(button => {
+                    button.checked = false;
+                });
+            }
+        }
+
+        function saveData(index) {
+            let remarksValue = document.getElementById("remarks").value;
+            let taskCorrectness = document.querySelector('input[name="task_correctness"]:checked')?.value;
+            let evalCorrectness = document.querySelector('input[name="eval_correctness"]:checked')?.value;
+
+            if (taskCorrectness && evalCorrectness) {
+                let data = {
+                    index: index,
+                    image: images[index],
+                    remarks: remarksValue,
+                    task_correctness: taskCorrectness,
+                    eval_correctness: evalCorrectness
+                };
+                imageData[index] = data;
+            }
+        }
+
+        function saveImageDataToJSON() {
+            saveData(currentIndex);
+            let jsonData = JSON.stringify(imageData.filter(data => data !== undefined), null, 2);
+
+            // Create a blob with the JSON data
+            let blob = new Blob([jsonData], { type: 'application/json' });
+
+            // Create a link element
+            let link = document.createElement("a");
+            link.href = window.URL.createObjectURL(blob);
+            link.download = "annotations.json";
+            document.body.appendChild(link);
+
+            // Trigger the download
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function prevImage() {
+            saveData(currentIndex);
+            if (currentIndex > 0) {
+                loadImage(currentIndex - 1);
+                document.querySelector('.box').scrollTop = 0; // Scroll to the top
+            }
+        }
+
+        function nextImage() {
+            saveData(currentIndex);
+            if (currentIndex < images.length - 1) {
+                loadImage(currentIndex + 1);
+                document.querySelector('.box').scrollTop = 0; // Scroll to the top
+            }
+        }
+
+        prevBtn.addEventListener("click", prevImage);
+        nextBtn.addEventListener("click", nextImage);
+        saveBtn.addEventListener("click", saveImageDataToJSON);
+        goToEpisodeBtn.addEventListener("click", goToEpisode);
+        window.onload = function () {
+            loadImage(currentIndex);
+        };
+    </script>
+</body>
+
+</html>

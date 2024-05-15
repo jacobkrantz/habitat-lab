@@ -54,7 +54,7 @@ class Room:
             for object in self.objects:
                 object_widths += object.width
 
-            min_width = max(min_width, object_widths * 5)
+            min_width = max(min_width, object_widths * self.config.min_width_per_object)
         total_receptacle_width = max(
             min_width, sum(receptacle.width for receptacle in self.receptacles)
         )
@@ -149,7 +149,7 @@ class Room:
             for object in self.objects:
                 object_widths += object.width
 
-            min_width = max(min_width, object_widths * 5)
+            min_width = max(min_width, object_widths * self.config.min_width_per_object)
 
         # Calculate total room width including margins
         minimum_room_width = max(
@@ -180,9 +180,16 @@ class Room:
         
         new_receptacle_width = sum(recep.width for recep in self.receptacles)
         num_receptacles = len(self.receptacles)
-        spacing = (minimum_room_width - new_receptacle_width) / (num_receptacles + 1)
-        
-        offset = new_position[0] + self.config.left_pad + extra_horizontal_pad + spacing
+        spacing = (
+                (
+                    self.room_width
+                    - self.config.receptacle_horizontal_margin_fraction
+                    * 2
+                    * self.room_width
+                )
+                - new_receptacle_width
+            ) / (num_receptacles + 1)
+        offset = new_position[0] + spacing + self.config.receptacle_horizontal_margin_fraction * self.room_width
         for receptacle in self.receptacles:
             ax = receptacle.plot(
                 ax, position=(offset, new_position[1] + self.config.bottom_pad)
@@ -239,7 +246,7 @@ class Room:
                     ax,
                     position=(
                         offset,
-                        new_position[1] + self.config.objects_height,
+                        new_position[1] + self.config.bottom_pad + self.config.full_height * self.config.objects_height,
                     ),
                 )
                 offset += obj.width + spacing
@@ -255,7 +262,7 @@ class Room:
 
         self.center_position = (
             new_position[0] + self.room_width / 2,
-            new_position[1] + self.config.placeholder_height * (self.config.objects_height if self.use_full_height else self.config.half_height),
+            new_position[1] + self.config.bottom_pad +(self.config.placeholder_height_if_full * self.config.full_height  if self.use_full_height else self.config.placeholder_height_if_half * self.config.half_height),
         )
 
         if not self.in_proposition:

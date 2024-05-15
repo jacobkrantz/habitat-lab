@@ -81,7 +81,7 @@ class Scene:
         return sorted_rooms
 
     def plot_object_to_receptacle_lines(
-        self, object_names, receptacle_names, function_name, ax
+        self, object_names, receptacle_names, number, function_name, ax
     ):
         """
         Plots lines between objects and receptacles based on their relations.
@@ -107,8 +107,8 @@ class Scene:
 
                         for receptacle_obj in receptacle_objs:
                             if function_name == "is_inside":
-                                if len(object_names) > 1:
-                                    line_style = "--"  # Dotted line for multiple objects
+                                if len(object_names) > number:
+                                    line_style = (0, (5, 10))  # Dotted line for multiple objects
                                 else:
                                     line_style = (
                                         "-"  # Solid line for single object
@@ -120,8 +120,8 @@ class Scene:
                                     line_style,
                                 )
                             elif function_name == "is_on_top":
-                                if len(object_names) > 1:
-                                    line_style = "--"  # Dotted line for multiple objects
+                                if len(object_names) > number:
+                                    line_style = (0, (5, 10))  # Dotted line for multiple objects
                                 else:
                                     line_style = (
                                         "-"  # Solid line for single object
@@ -133,7 +133,7 @@ class Scene:
                                     line_style,
                                 )
 
-    def plot_object_to_room_lines(self, object_names, room_names, ax):
+    def plot_object_to_room_lines(self, object_names, room_names, number, ax):
         """
         Plots lines between objects and rooms based on their relations.
 
@@ -155,8 +155,8 @@ class Scene:
                     target_rooms.append(r_room)
         for object_obj in source_objects:
             for room_obj in target_rooms:
-                if len(object_names) > 1:
-                    line_style = "--"  # Dotted line for multiple objects
+                if len(object_names) > number:
+                    line_style = (0, (5, 10))  # Dotted line for multiple objects
                 else:
                     line_style = "-"  # Solid line for single object
 
@@ -177,6 +177,7 @@ class Scene:
             room_loc (tuple): Location of the room.
             line_style (str): Style of the line ('-' for solid, '--' for dashed).
         """
+        
         arrow = FancyArrow(
             obj_loc[0],
             obj_loc[1],
@@ -185,11 +186,11 @@ class Scene:
             linestyle=line_style,
             head_length=self.config.arrow.head_length,
             head_width=self.config.arrow.head_width,
-            width=self.config.arrow.linewidth,
+            # width=self.config.arrow.linewidth,
             linewidth=self.config.arrow.linewidth,
             length_includes_head=True,
-            edgecolor="white",
-            facecolor="white",
+            edgecolor=(1, 1, 1, 1),
+            facecolor=(1, 1, 1, 0), # 0 alpha
             overhang=self.config.arrow.overhang,
         )
         ax.add_patch(arrow)
@@ -504,43 +505,46 @@ class Scene:
                 function_name = proposition["function_name"]
                 args = proposition["args"]
                 object_names = args["object_names"]
+                number = args["number"]
                 if function_name in ["is_inside", "is_on_top"]:
                     receptacle_names = args["receptacle_names"]
                     self.plot_object_to_receptacle_lines(
-                        object_names, receptacle_names, function_name, ax
+                        object_names, receptacle_names, number, function_name, ax
                     )
                 elif function_name == "is_in_room":
                     room_names = args["room_names"]
                     self.plot_object_to_room_lines(
-                        object_names, room_names, ax
+                        object_names, room_names, number, ax
                     )
                 # else:
                 #     raise NotImplementedError(f"Not implemented line plotting for {function_name}.")
 
-        # Set axis limits
-        ax.set_xlim(0, self.width)
-        ax.set_ylim(height_lower, height_upper)
+
 
         # Add instruction on top
+        wrapped_text = ""
         if self.instruction and show_instruction:
             wrapped_text = wrap_text(self.instruction, self.config.max_chars_per_line)
 
             ax.text(
                 0.5,
-                1.05,
+                self.config.instruction_relative_height,
                 ''.join(filter(lambda x: not x.isdigit(), wrapped_text)),
                 horizontalalignment="center",
-                verticalalignment="center",
+                verticalalignment="bottom",
                 transform=ax.transAxes,
                 fontsize=self.config.instruction_text_size,
             )
 
+        # Set axis limits
+        ax.set_xlim(0, self.width)
+        ax.set_ylim(height_lower, height_upper)
         if initial_ax is None:
-            return fig, ax, height_lower, height_upper
+            return fig, ax, height_lower, height_upper, wrapped_text
         else:
-            return ax, height_lower, height_upper
+            return ax, height_lower, height_upper, wrapped_text
 
-    def plot(self, propositions=None, constraints=None):
+    def plot(self, propositions=None, constraints=None, force_hide_instructions=None):
         """
         Plots the scene.
 
@@ -610,15 +614,16 @@ class Scene:
             background_color = "#3E4C60"
             # Set the background color of the figure
             fig.patch.set_facecolor(background_color)
+            num_instruction_lines = 0
             for level_idx, current_level in enumerate(toposort):
-                if level_idx == 0:
+                if level_idx == 0 and not force_hide_instructions:
                     show_instruction = True
                 else:
                     show_instruction = False
                 current_propositions = [
                     propositions[idx] for idx in current_level
                 ]
-                ax, height_lower, height_upper = self.plot_for_propositions(
+                ax, height_lower, height_upper, wrapped_text = self.plot_for_propositions(
                     current_propositions,
                     show_instruction=show_instruction,
                     height_offset=min_lower,
@@ -632,17 +637,19 @@ class Scene:
                     linewidth=4,
                     linestyle="-",
                 )
-
+                num_instruction_lines = max(num_instruction_lines, wrapped_text.count("\n")+1)
                 max_upper = max(height_upper, max_upper)
                 min_lower = min(height_lower - 40, min_lower)
             self.height = max_upper - min_lower
-            return fig, ax
+            return fig, ax, num_instruction_lines
         else:
-            fig, ax, height_lower, height_upper = self.plot_for_propositions(
-                propositions
+            num_instruction_lines = 0
+            fig, ax, height_lower, height_upper, wrapped_text = self.plot_for_propositions(
+                propositions, show_instruction=not force_hide_instructions,
             )
             self.height = height_upper - height_lower
-            return fig, ax
+            num_instruction_lines = max(num_instruction_lines, wrapped_text.count("\n")+1)
+            return fig, ax, num_instruction_lines
 
 
 # TODO:

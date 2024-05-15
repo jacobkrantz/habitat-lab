@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import random
 import traceback
 
 import matplotlib
@@ -28,22 +29,23 @@ def load_configuration():
     return OmegaConf.load(config_path)
 
 
-def load_episode_data(episode_data_dir, episode_id):
+def load_episode_data(episode_data_dir, episode_id, prefix="episode_"):
     """
     Load episode data from JSON file.
     """
     with open(
-        os.path.join(episode_data_dir, f"episode_{episode_id}.json")
+        os.path.join(episode_data_dir, f"{prefix}{episode_id}.json")
     ) as f:
         return json.load(f)
 
 
-def load_run_data(run_json, episode_id):
+def load_run_data(run_json, episode_id, run_data=None):
     """
     Load run data and retrieve episode data.
     """
-    with open(run_json) as f:
-        run_data = json.load(f)
+    if not run_data:
+        with open(run_json) as f:
+            run_data = json.load(f)
     for episode in run_data["episodes"]:
         if episode["episode_id"] == str(episode_id):
             return episode
@@ -121,6 +123,8 @@ def plot_scene(
     propositions,
     constraints,
     receptacle_icon_mapping,
+    instruction=None,
+    force_hide_instructions=False,
     save_path=None,
 ):
     """
@@ -148,12 +152,32 @@ def plot_scene(
         room = Room(config, room_id, room_receptacles, room_objects)
         rooms.append(room)
 
-    scene = Scene(config, rooms, episode_data["instruction"])
-    fig, ax = scene.plot(propositions, constraints)
+    scene = Scene(config, rooms, episode_data["instruction"] if instruction is None else instruction)
+    fig, ax, num_instruction_lines = scene.plot(propositions, constraints, force_hide_instructions)
     width_inches = config.width_inches
     fig.set_size_inches(
         width_inches, (scene.height / scene.width) * width_inches
     )
+    if force_hide_instructions:
+        top = 0.95
+    else:
+        if num_instruction_lines == 1:
+            top = 0.85
+        elif num_instruction_lines == 2:
+            top = 0.8
+        elif num_instruction_lines == 3:
+            top = 0.75
+        else:
+            top = 0.7
+    plt.subplots_adjust(
+        right=0.98,
+        left=0.02,
+        bottom=0.05,
+        top=top,
+        wspace=0.1,
+        hspace=0.1
+    )
+
     if save_path:
         plt.savefig(save_path, dpi=400)
     else:
@@ -163,6 +187,81 @@ def plot_scene(
     scene.cleanup()
     del scene
 
+def get_episode_data_for_plot(args, episode_id, loaded_run_data=None):
+        episode_data = load_episode_data(args.episode_data_dir, episode_id, args.episode_file_prefix)
+        handle_to_recep = {
+            v: k for k, v in episode_data["recep_to_handle"].items()
+        }
+        handle_to_object = {
+            v: k for k, v in episode_data["object_to_handle"].items()
+        }
+        id_to_room = {v: k for k, v in episode_data["room_to_id"].items()}
+        for receptacle_id in episode_data["recep_to_description"]:
+            if not os.path.exists(
+                f'receptacles/{"_".join(receptacle_id.split("_")[:-1])}@2x.png'
+            ):
+                raise NotImplementedError(
+                    f"Missing receptacle asset for receptacle ID: {receptacle_id}"
+                )
+
+        receptacle_icon_mapping = {
+            receptacle_id: f'receptacles/{"_".join(receptacle_id.split("_")[:-1])}@2x.png'
+            for receptacle_id in episode_data["recep_to_description"]
+            if os.path.exists(
+                f'receptacles/{"_".join(receptacle_id.split("_")[:-1])}@2x.png'
+            )
+        }
+        run_data = load_run_data(args.run_json, episode_id, loaded_run_data)
+
+        # Handle Propositions
+        propositions = run_data["evaluation_propositions"]
+        for proposition in propositions:
+            if proposition["function_name"] not in ["is_on_top", "is_inside", "is_on_floor", "is_in_room"]:
+                raise NotImplementedError(f'Not implemented for function_name {proposition["function_name"]}')
+            if "object_handles" in proposition["args"]:
+                if proposition["args"]["number"] > 1 and len(proposition["args"]["object_handles"]) != proposition["args"]["number"]:
+                    raise NotImplementedError(f'Given number {proposition["args"]["number"]} does not match number of objects {len(proposition["args"]["object_handles"])} in proposition. Not handled currently.')
+                proposition["args"]["object_names"] = []
+                for object_handle in proposition["args"]["object_handles"]:
+                    proposition["args"]["object_names"].append(
+                        handle_to_object[object_handle]
+                    )
+            if "receptacle_handles" in proposition["args"]:
+                proposition["args"]["receptacle_names"] = []
+                for recep_handle in proposition["args"][
+                    "receptacle_handles"
+                ]:
+                    proposition["args"]["receptacle_names"].append(
+                        handle_to_recep[recep_handle]
+                    )
+
+            if "room_ids" in proposition["args"]:
+                proposition["args"]["room_names"] = []
+                for room_id in proposition["args"]["room_ids"]:
+                    proposition["args"]["room_names"].append(
+                        id_to_room[room_id]
+                    )
+
+        # Handle Constraints
+        constraints = run_data["evaluation_constraints"]
+        for idx, constraint in enumerate(constraints):
+            if constraint["type"] == "TemporalConstraint":
+                digraph = nx.DiGraph(constraint["args"]["dag_edges"])
+                constraint["toposort"] = [
+                    sorted(generation)
+                    for generation in nx.topological_generations(digraph)
+                ]
+            elif constraint["type"] == "TerminalSatisfactionConstraint":
+                unique_terminal_constraints = len(
+                    np.unique(constraint["args"]["proposition_indices"])
+                )
+                if len(propositions) != unique_terminal_constraints:
+                    print(f"For episodie_id:{episode_id}, len of propositions: {len(propositions)} and unique terminal constraints {unique_terminal_constraints}")
+            else:
+                raise NotImplementedError(
+                    f"Constraint type {constraint['type']} is not handled currently."
+                )
+        return episode_data, run_data, receptacle_icon_mapping, propositions, constraints
 
 def parse_arguments():
     """
@@ -188,8 +287,13 @@ def parse_arguments():
     parser.add_argument(
         "--save-path", type=str, help="Directory to save the figures"
     )
+    parser.add_argument(
+        "--episode-file-prefix", type=str, help="Prefix for episode data files", default="episode_"
+    )
     parser.add_argument('--google-creds', type=str, help='Path to Google Drive credentials JSON file')
     parser.add_argument('--google-sheets-name', type=str, help='Name of Google Sheets document', default='Visualization-Rearrangement')
+    parser.add_argument('--force-hide-instructions', action='store_true', help='Flag to force hide instructions')
+    parser.add_argument('--sample-size', type=int, help="If only a random subset of all the episodes is to be visualized, the sample size.")
     return parser.parse_args()
 
 def main():
@@ -210,89 +314,73 @@ def main():
     plt.rcParams["font.weight"] = "bold"
     plt.rcParams["text.color"] = "white"
 
+    with open(args.run_json) as f:
+        loaded_run_data = json.load(f)
+
     if args.episode_id is not None:
         episode_ids = [args.episode_id]
     else:
-        episode_ids = sorted(
-            [
-                int(filename.split("_")[1].split(".")[0])
-                for filename in os.listdir(args.episode_data_dir)
-                if filename.startswith("episode_")
-            ]
-        )
+        if args.sample_size:
+            # Group episodes by scene_id
+            grouped_episodes = {}
+            for episode in loaded_run_data["episodes"]:
+                scene_id = episode["scene_id"]
+                if scene_id not in grouped_episodes:
+                    grouped_episodes[scene_id] = []
+                grouped_episodes[scene_id].append(episode)
+
+            # Shuffle scene IDs to ensure random order
+            scene_ids = list(grouped_episodes.keys())
+            random.shuffle(scene_ids)
+            print("Total unique scenes: ", scene_ids)
+            # Sample one episode from each scene until reaching the desired sample size
+            sampled_episodes = []
+            while len(sampled_episodes) < args.sample_size:
+                for scene_id in scene_ids:
+                    episodes = grouped_episodes[scene_id]
+                    if not episodes:
+                        continue  # If there are no more episodes for this scene, skip to the next scene
+                    selected_episode = random.choice(episodes)
+                    try:
+                        temp_episode_data, temp_run_data, temp_receptacle_icon_mapping, temp_propositions, temp_constraints = get_episode_data_for_plot(args, selected_episode["episode_id"], loaded_run_data)
+                        sampled_episodes.append(selected_episode)
+                        # Remove the selected episode from the list of episodes for its scene
+                        episodes.remove(selected_episode)
+                    except Exception as e:
+                        print(scene_id, selected_episode["episode_id"], e)
+                        continue
+
+                    # Check if enough episodes have been sampled
+                    if len(sampled_episodes) >= args.sample_size:
+                        break
+
+                # Break out of the outer while loop if enough episodes have been sampled
+                if len(sampled_episodes) >= args.sample_size:
+                    break
+
+            # Extract episode_ids
+            episode_ids = [episode["episode_id"] for episode in sampled_episodes]
+            unique_scenes = np.unique([episode["scene_id"] for episode in sampled_episodes])
+            print("Sampled episodes unique scenes: ", unique_scenes)
+            print("Missing scenes: ", set(scene_ids) - set(unique_scenes))
+        else:
+            episode_ids = sorted(
+                [
+                    int(filename.split("_")[-1].split(".")[0])
+                    for filename in os.listdir(args.episode_data_dir)
+                    if filename.startswith("episode_")
+                ]
+            )
+
+    # Create a dictionary to store run data for episod es with correct visualizations
+    run_data_dict = {
+        "config": None,
+        "episodes": []        
+    }
 
     for episode_id in tqdm(episode_ids):
         try:
-            episode_data = load_episode_data(args.episode_data_dir, episode_id)
-            handle_to_recep = {
-                v: k for k, v in episode_data["recep_to_handle"].items()
-            }
-            handle_to_object = {
-                v: k for k, v in episode_data["object_to_handle"].items()
-            }
-            id_to_room = {v: k for k, v in episode_data["room_to_id"].items()}
-            for receptacle_id in episode_data["recep_to_description"]:
-                if not os.path.exists(
-                    f'receptacles/{"_".join(receptacle_id.split("_")[:-1])}@2x.png'
-                ):
-                    print(
-                        f"Missing receptacle asset for receptacle ID: {receptacle_id}"
-                    )
-
-            receptacle_icon_mapping = {
-                receptacle_id: f'receptacles/{receptacle_id.split("_")[0]}@2x.png'
-                for receptacle_id in episode_data["recep_to_description"]
-                if os.path.exists(
-                    f'receptacles/{receptacle_id.split("_")[0]}@2x.png'
-                )
-            }
-
-            run_data = load_run_data(args.run_json, episode_id)
-
-            # Handle Propositions
-            propositions = run_data["evaluation_propositions"]
-            for proposition in propositions:
-                proposition["args"]["object_names"] = []
-                for object_handle in proposition["args"]["object_handles"]:
-                    proposition["args"]["object_names"].append(
-                        handle_to_object[object_handle]
-                    )
-                if "receptacle_handles" in proposition["args"]:
-                    proposition["args"]["receptacle_names"] = []
-                    for recep_handle in proposition["args"][
-                        "receptacle_handles"
-                    ]:
-                        proposition["args"]["receptacle_names"].append(
-                            handle_to_recep[recep_handle]
-                        )
-
-                if "room_ids" in proposition["args"]:
-                    proposition["args"]["room_names"] = []
-                    for room_id in proposition["args"]["room_ids"]:
-                        proposition["args"]["room_names"].append(
-                            id_to_room[room_id]
-                        )
-
-            # Handle Constraints
-            constraints = run_data["evaluation_constraints"]
-            for idx, constraint in enumerate(constraints):
-                if constraint["type"] == "TemporalConstraint":
-                    digraph = nx.DiGraph(constraint["args"]["dag_edges"])
-                    constraint["toposort"] = [
-                        sorted(generation)
-                        for generation in nx.topological_generations(digraph)
-                    ]
-                elif constraint["type"] == "TerminalSatisfactionConstraint":
-                    unique_terminal_constraints = len(
-                        np.unique(constraint["args"]["proposition_indices"])
-                    )
-                    if len(propositions) != unique_terminal_constraints:
-                        print(f"For episodie_id:{episode_id}, len of propositions: {len(propositions)} and unique terminal constraints {unique_terminal_constraints}")
-                else:
-                    print(
-                        f"Constraint type {constraint['type']} is not handled currently. Deleting this constraint for the current visualization."
-                    )
-                    del constraints[idx]
+            episode_data, run_data, receptacle_icon_mapping, propositions, constraints = get_episode_data_for_plot(args, episode_id, loaded_run_data)
 
             save_directory = (
                 args.save_path
@@ -300,6 +388,10 @@ def main():
                 else f"visualization_{episode_id}"
             )
             os.makedirs(save_directory, exist_ok=True)
+            
+            # Save episode_data as JSON inside the folder
+            with open(os.path.join(save_directory, f"episode_data_{episode_id}.json"), "w") as episode_file:
+                json.dump(episode_data, episode_file, indent=4)
 
             if args.object_id:
                 plot_object(
@@ -329,9 +421,15 @@ def main():
                     propositions,
                     constraints,
                     receptacle_icon_mapping,
-                    os.path.join(save_directory, f"viz_{episode_id}.png"),
+                    instruction=run_data["instruction"],
+                    force_hide_instructions=args.force_hide_instructions,
+                    save_path = os.path.join(save_directory, f"viz_{episode_id}.png"),
                 )
 
+            # Add run data for the current episode to the dictionary
+            run_data["viz_path"] = os.path.join(save_directory, f"viz_{episode_id}.png")
+            run_data_dict["episodes"].append(run_data)
+            
             if args.google_creds:
                 # Load credentials for Drive
                 scopes = ["https://www.googleapis.com/auth/drive"]
@@ -351,10 +449,15 @@ def main():
                 sheet_id = get_google_sheet(sheets_service, args.google_sheets_name, sheet_id)
                 res = add_image_to_sheet(sheets_service, sheet_id, episode_id, image_id)
 
+            # Save the run data dictionary to a JSON file
+            with open(f'{save_directory}_run_data.json', 'w') as f:
+                json.dump(run_data_dict, f, indent=4)
 
         except Exception:
             print(f"Episode ID: {episode_id}")
             print(traceback.format_exc())
+
+
 
 
 if __name__ == "__main__":

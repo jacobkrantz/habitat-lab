@@ -39,7 +39,7 @@ The sample directory is arranged as follows:
     - Numerical entity IDs
         - The instruction is unclear without specifying the object, receptacle or room IDs (e.g. Rearrange the bedrooms. Move lamp from bedroom to bedroom.). In the visualization, we do not show the IDs but the corresponding episode in `sample_episodes.json` may have this information.
     - Unresolvable ambiguity
-        - The task itself is unclear.
+        - The task is unclear.
     - Other
 
     **Evaluation Function**:

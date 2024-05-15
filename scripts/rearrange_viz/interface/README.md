@@ -60,8 +60,9 @@ The sample directory is arranged as follows:
 - In case you select `Other` for either Task or Evaluation Function, please add a comment in the `Comments` input as to why you feel either `Task` or `Evaluation Function` is incorrect. For other remarks, adding `Comments` is optional but encouraged.
 - In cases where objects which are to be placed on the floor, you will see an underline on the object.
 - In cases where only one out of many objects are to be moved, you will see a dotted arrow for all objects.
-- Use `Prev` and `Next` buttons to navigate to next or previous episodes. The current state is saved and you should see your currently added annotations.
+- Use `Prev` and `Next` buttons to navigate to next or previous episodes.
 - Once you are done for the current session, please click on `Download Annotations`.
+- The current state is saved when you click `Prev` or `Next` or `Download Annotations`. You should see your current annotations when you navigate to an already annotated episode.
 - It is okay to maintain several JSON files as long as you ensure there are no overlaps between the episodes, as we will combine these JSON files later on.
 
 

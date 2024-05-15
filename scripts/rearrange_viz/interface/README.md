@@ -26,7 +26,7 @@ The sample directory is arranged as follows:
 ## Instructions
 - In order to run the annotation tool, open `interface.html` on a browser of your choice. The current version has been tested on Google Chrome.
 - The `Go To` button helps you get to a particular episode in the list of episodes provided. Enter the episode index (1-indexed) in the input box beside the `Go To` button, and click on `Go To` button. This is useful in case you save the annotations, and then start the interface again.
-- We want to evaluate on both `Task` and `Evaluation function` correctness. Sometimes, the task may be incorrect (e.g. it assumes a room that does not exist in the scene). Other times, the evaluation function may be incorrect (e.g. maps to incorrect receptacle or uses incorrect relation). Click on `Correct` or `Incorrect` for each based on your understanding respectively. Please make sure you select the correct button for both.
+- We want to evaluate on both `Task` and `Evaluation Function` correctness. Sometimes, the task may be incorrect (e.g. it assumes a room that does not exist in the scene). Other times, the evaluation function may be incorrect (e.g. maps to incorrect receptacle or uses incorrect relation). Click on `Correct` or `Incorrect` for each based on your understanding. Please make sure you select the buttons for both `Task` and `Evaluation Function`.
 - If both Task and Evaluation Function are correct, you can skip the remarks and the comments. Otherwise, you should provide some feedback as to why they are wrong.
 - For both Task and Evaluation Function, we provide some pre-defined remarks. You can select one or more of these from the list. Here are examples of each:
 
@@ -57,7 +57,7 @@ The sample directory is arranged as follows:
         - The task requires the two objects to be placed on same receptacle, or strictly different receptacles, but the evaluation function does not specify that. 
         - **Note that** all such tasks will have by default incorrect evaluation functions, as we do not support same arg/different arg constraints currently.
     - Other
-- In case you select `Other`, please add a comment in the `Comments` input as to why you feel either `Task` or `Evaluation Function` is incorrect. For other remarks, adding `Comments` is optional but encouraged.
+- In case you select `Other` for either Task or Evaluation Function, please add a comment in the `Comments` input as to why you feel either `Task` or `Evaluation Function` is incorrect. For other remarks, adding `Comments` is optional but encouraged.
 - In cases where objects which are to be placed on the floor, you will see an underline on the object.
 - In cases where only one out of many objects are to be moved, you will see a dotted arrow for all objects.
 - Use `Prev` and `Next` buttons to navigate to next or previous episodes. The current state is saved and you should see your currently added annotations.

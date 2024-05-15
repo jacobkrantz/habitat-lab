@@ -58,6 +58,7 @@ The sample directory is arranged as follows:
         - **Note that** all such tasks will have by default incorrect evaluation functions, as we do not support same arg/different arg constraints currently.
     - Other
 - In case you select `Other` for either Task or Evaluation Function, please add a comment in the `Comments` input as to why you feel either `Task` or `Evaluation Function` is incorrect. For other remarks, adding `Comments` is optional but encouraged.
+- If the task is incorrect, you may skip the correctness/incorrectness for the evaluation function.
 - In cases where objects which are to be placed on the floor, you will see an underline on the object.
 - In cases where only one out of many objects are to be moved, you will see a dotted arrow for all objects.
 - Use `Prev` and `Next` buttons to navigate to next or previous episodes.
@@ -88,6 +89,8 @@ The sample directory is arranged as follows:
   - `on_top` is alway valid in such cases, and `inside` is valid where semantically reasonable (i.e. inside a rug makes no sense).
 - There are cases when instructions begin like: "Help me arrange the dining room for the dinner party", and then the instructions start specifying something completely different (moving the objects from dining room to living room, or something else). Although the latter part of the tasks are proper/correct. Are such instructions overall considered correct?
   - We can consider these correct.
+- What does the "new bed" mean? I assume the object is already on one bed?
+  - I would treat that equivalently to "other" bed, where the object starts on a given bed.
 
 ## Receptacle List
 The figure below shows all the receptacles that we support at the moment and their names.

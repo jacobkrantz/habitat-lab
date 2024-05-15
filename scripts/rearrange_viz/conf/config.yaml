@@ -2,46 +2,49 @@ defaults:
   - object: default
 
 object:
-  text_margin: 120
-  width: 70
-  height: 70
-  text_size: 15
+  text_margin: 150
+  width: 80
+  height: 80
+  text_size: 13
   rounding_size: 10
-  max_chars_per_line: 11
-  on_floor_linewidth: 5
+  max_chars_per_line: 9
+  on_floor_linewidth: 2
   on_floor_line_length_ratio: 0.6
   on_floor_line_margin_ratio: 1.2
 
 receptacle:
   horizontal_margin: 5
-  target_height: 350
+  target_height: 315 # 0.35 * full_height
   placeholder:
-    width: 70
-    height: 70
+    width: 80
+    height: 80
     rounding_size: 10
   placeholder_margin: 40
 
 room:
   placeholder:
-    width: 70
-    height: 70
+    width: 80
+    height: 80
     rounding_size: 10
   box_alpha: 1.0
   horizontal_margin: 10
   vertical_margin: 10
-  top_pad: 10
+  top_pad: 100
   bottom_pad: 170
-  left_pad: 50
-  right_pad: 50
-  full_height: 800
+  left_pad: 20
+  right_pad: 20
+  full_height: 900
   half_height: 500
-  placeholder_height: 0.8 # fraction of objects height if using room full height else half height
-  objects_height: 700
-  min_width: 200
+  placeholder_height_if_full: 0.5 # of full height above bottom pad
+  placeholder_height_if_half: 0.85 # of half height above bottom pad
+  objects_height: 0.75 # of full height above bottom pad
+  min_width: 300
   object_horizontal_margin_fraction: 0.05 # Fraction on each side to skip
-  text_size: 15
+  receptacle_horizontal_margin_fraction: 0.025 # Fraction on each side to skip
+  text_size: 13
   border_width: 2
   max_chars_per_line: 13
+  min_width_per_object: 6
 
 scene:
   arrow:
@@ -49,8 +52,9 @@ scene:
     head_width: 50
     linewidth: 1
     overhang: 0.9
-  target_width: 4000
-  instruction_text_size: 25
+  target_width: 5500
+  instruction_text_size: 20
+  instruction_relative_height: 1.05
   max_chars_per_line: 100
 
 width_inches: 20
